@@ -12,6 +12,16 @@ const navItems = [
 
 const getRoute = () => window.location.hash.replace(/^#\/?/, '') || 'home'
 const formatPrice = (price) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price / 100)
+const landingSlides = [
+  { image: '1196337404344189.jpg', kicker: 'GRAND_M / 01', title: 'Built to make an entrance.', route: 'sneakers' },
+  { image: '12947917672194699.jpg', kicker: 'GRAND_M / 02', title: 'Your everyday, elevated.', route: 'tops' },
+  { image: '26177241581300577.jpg', kicker: 'GRAND_M / 03', title: 'Comfort that moves with you.', route: 'hoodies' },
+  { image: '5488830793237166.jpg', kicker: 'GRAND_M / 04', title: 'A sharper kind of casual.', route: 'collections' },
+  { image: '9288742978073284.jpg', kicker: 'GRAND_M / 05', title: 'The next pair starts here.', route: 'sneakers' },
+  { image: 'HolloShoe _ Best Designer & Dress Shoes for Stylish Men.jpg', kicker: 'GRAND_M / 06', title: 'Made for the well dressed.', route: 'sneakers' },
+  { image: "Men's Relaxed Fit Resort Wear Shirt.jpg", kicker: 'GRAND_M / 07', title: 'Easy pieces. Strong point of view.', route: 'tops' },
+]
+const landingImage = (image) => encodeURI(`/images/landing/${image}`)
 
 function App() {
   const [route, setRoute] = useState(getRoute)
@@ -138,7 +148,7 @@ function HomePage({ addToCart, navigate }) {
           <p>Statement sneakers, premium hoodies, and everyday pieces selected for your next chapter.</p>
           <div className="hero-actions"><button className="button primary" onClick={() => navigate('collections')} type="button">Shop the collection <span>›</span></button><button className="button quiet" onClick={() => navigate('about')} type="button">Our story</button></div>
         </div>
-        <div className="hero-art"><img alt="GRAND_M collection" src="/images/others/GRAND_M.png" /><p>New season<br />just landed</p></div>
+        <HeroGallery navigate={navigate} />
       </section>
       <section className="value-strip"><p><b>01</b> Curated essentials</p><p><b>02</b> Secure checkout</p><p><b>03</b> Easy 30-day returns</p></section>
       <section className="content-section">
@@ -151,6 +161,45 @@ function HomePage({ addToCart, navigate }) {
       <ProductRail addToCart={addToCart} navigate={navigate} products={hoodies} route="hoodies" title="Layers worth living in" />
       <section className="editorial-banner"><p className="eyebrow">The GRAND_M standard</p><h2>Style should feel personal, not precious.</h2><button className="text-button" onClick={() => navigate('about')} type="button">Meet the collection ›</button></section>
     </>
+  )
+}
+
+function HeroGallery({ navigate }) {
+  const [activeIndex, setActiveIndex] = useState(0)
+  const activeSlide = landingSlides[activeIndex]
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setActiveIndex((index) => (index + 1) % landingSlides.length)
+    }, 4500)
+
+    return () => window.clearInterval(intervalId)
+  }, [])
+
+  if (!activeSlide) return null
+
+  return (
+    <section aria-label="Featured product gallery" className="hero-gallery">
+      <p className="gallery-vertical-label">Always in motion</p>
+      <div className="gallery-stage">
+        <span className="gallery-count">0{activeIndex + 1} / 0{landingSlides.length}</span>
+        <div className="gallery-frame">
+          <img alt={activeSlide.title} className="gallery-image" key={activeSlide.image} src={landingImage(activeSlide.image)} />
+          <div className="gallery-overlay">
+            <p>{activeSlide.kicker}</p>
+            <h2>{activeSlide.title}</h2>
+            <button onClick={() => navigate(activeSlide.route)} type="button">Discover piece <span>›</span></button>
+          </div>
+        </div>
+      </div>
+      <div className="gallery-controls">
+        <button aria-label="Show previous featured image" onClick={() => setActiveIndex((index) => (index - 1 + landingSlides.length) % landingSlides.length)} type="button">←</button>
+        <div className="gallery-dots">
+          {landingSlides.map((slide, index) => <button aria-label={`Show ${slide.title}`} className={index === activeIndex ? 'active' : ''} key={slide.image} onClick={() => setActiveIndex(index)} type="button" />)}
+        </div>
+        <button aria-label="Show next featured image" onClick={() => setActiveIndex((index) => (index + 1) % landingSlides.length)} type="button">→</button>
+      </div>
+    </section>
   )
 }
 
