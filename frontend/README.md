@@ -17,3 +17,10 @@ Use `npm run build` to create the production bundle in `dist`. The Express serve
 - Search, category filters, sorting, product quantities, and an in-memory shopping bag
 - Responsive navigation and a saved light/dark color preference
 - Self-contained product assets in `public/images`
+- An endlessly rotating landing gallery using professionally named images in `public/images/landing`
+
+## Landing gallery assets
+
+The display images use descriptive filenames such as `grandm-look-statement-sneaker.jpg`,
+`grandm-look-comfort-hoodie.jpg`, and `grandm-look-designer-dress-shoe.jpg`. Keep new gallery
+images in `public/images/landing` and reference them through the `landingSlides` list in `src/App.jsx`.

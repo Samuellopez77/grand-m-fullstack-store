@@ -5,6 +5,7 @@ An e-commerce project with a React storefront and an Express/MongoDB backend.
 ## Project structure
 
 - `frontend/` — active React + Vite application
+- `frontend/public/images/landing/` — professionally named landing-gallery images
 - `backend/serverside/` — Express server and MongoDB connection
 
 ## Development
@@ -25,3 +26,5 @@ npm run build
 cd ../backend/serverside
 npm start
 ```
+
+The landing page automatically cycles through the images in `frontend/public/images/landing/`.
