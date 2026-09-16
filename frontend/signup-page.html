@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign up</title>
+  <link rel="stylesheet" href="styles/signup.css">
+</head>
+
+<body>
+  <div class="signup-container">
+    <form id="signup-form">
+      <h2>SIGN UP</h2>
+      <h4>Create Account</h4>
+
+      <input type="text" id="username" class="user" placeholder="Username" required>
+
+      <div class="pass-container">
+        <input type="password" id="passcode" placeholder="Password" required>
+        <span id="toggle-passcode" class="toggle-passcode">&#128065;</span>
+      </div>
+
+      <div class="pass-container">
+        <input type="password" id="confirm-passcode" placeholder="Confirm Password" required>
+        <span id="toggle-confirm-passcode" class="toggle-passcode">&#128065;</span>
+      </div>
+
+      <button type="submit" class="sign-up-btn">Sign-up</button>
+    </form>
+    <p class="login"><a href="login-page.html">Already have an account?</a></p>
+  </div>
+</body>
+
+</html>

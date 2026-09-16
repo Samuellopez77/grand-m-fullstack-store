@@ -1,0 +1,120 @@
+/* === GENERAL PAGE SETUP === */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(
+      rgba(192, 159, 27, 0.726),
+      rgba(107, 80, 20, 0.5),
+      rgba(0, 0, 0, 0.973),
+      rgba(0, 0, 0, 0.973)
+    ),
+    url('../images/others/GRAND_M.png');
+  background-blend-mode: multiply;
+  background-attachment: fixed;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+/* === SIGNUP CONTAINER and HYPERLINKS === */
+.signup-container {
+  width: 450px;
+  background-color: rgba(119, 114, 114, 0.45);
+  margin: 100px auto;
+  box-shadow: 3px 10px 7px rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
+  padding: 30px 40px;
+  text-align: center;
+}
+
+.signup-container h2 {
+  margin-bottom: 5px;
+  color: white;
+}
+a {
+    color: white;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+.signup-container h4 {
+  margin-top: 0;
+  margin-bottom: 30px;
+  color: #eaeaea;
+  font-weight: normal;
+}
+
+/* === INPUT STYLING === */
+.user {
+    display: flex;
+  width: 66%;
+  padding: 10px;
+  border: none;
+  margin-right: 4px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  box-shadow: 1px 3px 6px rgba(0, 0, 0, 0.2);
+  outline: none;
+}
+
+/* === PASSWORD FIELDS === */
+.pass-container {
+  position: relative;
+  width: 60%;
+  margin-bottom: 20px;
+}
+
+.pass-container input {
+  width: 100%;
+  padding: 10px 40px 10px 10px; /* leave space for the eye icon */
+  border: none;
+  border-radius: 5px;
+  box-shadow: 1px 3px 6px rgba(0, 0, 0, 0.2);
+  outline: none;
+}
+
+/* === EYE ICONS === */
+.toggle-passcode {
+  position: absolute;
+  right: -30px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 18px;
+  color: rgb(0, 0, 0);
+  user-select: none;
+}
+
+/* === BUTTON === */
+.sign-up-btn {
+  width: 20%;
+  padding: 10px;
+  background-color: black;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.sign-up-btn:hover {
+  background-color: #333;
+}
+
+/* === FOOTER TEXTS === */
+ .login {
+  color: white;
+  font-size: 14px;
+}
+
+.login:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.login {
+  display: inline-block;
+  margin-top: 5px;
+}
