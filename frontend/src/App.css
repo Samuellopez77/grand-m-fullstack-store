@@ -100,16 +100,6 @@
   width: min(100%, 470px);
 }
 
-.gallery-count {
-  position: absolute;
-  z-index: 3;
-  top: -22px;
-  right: 0;
-  color: var(--gold);
-  font: 500 10px 'DM Mono', monospace;
-  letter-spacing: .08em;
-}
-
 .gallery-frame {
   position: relative;
   height: clamp(360px, 38vw, 475px);
