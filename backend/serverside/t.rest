@@ -1,2 +1,0 @@
-## GET REQUEST
-http://localhost:3000
