@@ -2,7 +2,13 @@
 
 ## Product Overview
 
-<!-- TODO: What is Grand_M, in 2-3 sentences? What does it let a user do? -->
+Grand_M is an e-commerce platform. Customers browse product collections,
+add items to a cart, and place orders. Behind the scenes, a small
+operations team (admin + specialized staff roles) manages inventory,
+fulfills orders, handles deliveries, supports customers, and manages
+finances.
+
+<!-- TODO: refine this as more features come into focus -->
 
 ## Problem Statement
 
@@ -21,36 +27,45 @@
 
 ## Target Users
 
-<!-- TODO: Who is this for? One or two concrete personas beats a vague
-     "everyone." E.g.: "Small business owners in Accra who currently
-     coordinate deliveries over WhatsApp." -->
-
 | Persona | Description | Primary need |
 |---|---|---|
-| | | |
+| Customer | Shops the storefront: browses collections, buys products | Find products easily, trust checkout, track orders |
+| Admin | Owns the whole operation | Full visibility and control across every function |
+| Product/Inventory Manager | Staff | Keep the catalog accurate and stock current |
+| Order Manager | Staff | Move orders from placed → fulfilled smoothly |
+| Delivery Staff | Staff | Know what to deliver, where, and mark it done |
+| Customer Support | Staff | Resolve customer issues without needing engineering |
+| Finance Staff | Staff | Track payments, process refunds, reconcile books |
+
+<!-- TODO: any specifics about who the *customers* are — region, what
+     kinds of products/collections, typical order size — sharpens this
+     further and will inform design & delivery decisions later. -->
 
 ## Core Features (MVP scope)
 
-<!-- TODO: The minimum set of features that makes this usable and useful.
-     If it's not needed for the first working version, it belongs in
-     "Future scope" instead. -->
+See `docs/SRS.md` for the full functional requirements. Summary:
 
-1.
-2.
-3.
+1. Customer: browse collections, search/filter, view product detail, cart, checkout, place order, view order history
+2. Admin: full CRUD over products/collections/orders/staff accounts, dashboard
+3. Staff (role-scoped): inventory management, order fulfillment, delivery tracking, customer support, finance/refunds
 
 ## Out of Scope (for now)
 
-<!-- TODO: Explicitly naming what you're NOT building yet prevents scope
-     creep later and shows deliberate prioritization to a grader/reviewer. -->
+- Product reviews/ratings
+- Wishlist / saved-for-later
+- Order cancellation/return self-service (support handles these manually at MVP)
+- Multi-currency / multi-language
+- Promotions/coupon codes
 
--
+<!-- TODO: confirm these are actually deferred and not secretly required -->
 
 ## Future Scope
 
-<!-- Features worth having but deliberately deferred past MVP -->
-
--
+- Product reviews & ratings
+- Wishlist
+- Customer self-service returns/cancellations
+- Promotions & discount codes
+- Analytics dashboard for admin (sales trends, etc.)
 
 ## Success Metrics
 
