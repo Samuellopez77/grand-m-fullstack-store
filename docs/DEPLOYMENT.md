@@ -18,6 +18,7 @@ See `backend/.env.example` for the current list:
 | `DATABASE_URL` | Pooled PostgreSQL connection (Supabase, used at runtime) | `postgresql://postgres.[ref]:[password]@[host]:6543/postgres?pgbouncer=true` |
 | `DIRECT_URL` | Direct PostgreSQL connection (used only by Prisma migrations) | `postgresql://postgres.[ref]:[password]@[host]:5432/postgres` |
 | `NODE_ENV` | Environment mode | `development` |
+| `CORS_ORIGIN` | Comma-separated browser origins allowed to access the API; required for a separate production frontend | `https://store.example.com` |
 
 Note: if the database password contains special characters (`@`, `#`, `%`,
 etc.), they must be percent-encoded in the connection string or Prisma will

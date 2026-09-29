@@ -104,13 +104,17 @@ and site configuration.
 
 | Category | Requirement |
 |---|---|
-| **Security** | Passwords hashed (never stored/logged in plaintext). Auth tokens expire. Role checks enforced server-side on every protected route, never trusted from the client. |
-| **Authorization** | Every non-public route must pass through an authentication check, then a role/permission check, before reaching business logic. |
-| **Performance** | <!-- TODO: set real targets once there's traffic to measure, e.g. "product listing responds in <500ms at expected load" --> |
-| **Availability** | <!-- TODO: uptime target once deployed --> |
-| **Scalability** | <!-- TODO: expected concurrent users / order volume, if known --> |
-| **Usability** | Checkout should be completable in a minimal number of steps; error messages must be specific enough for a customer to self-correct (e.g. "This item is out of stock" not "Error"). |
-| **Data integrity** | Stock levels must never go negative; an order and its stock deduction must succeed or fail together (no partial state). |
+| Category | Requirement / MVP acceptance target | Current status |
+|---|---|---|
+| **Security** | Hash passwords with bcrypt (cost factor >= 12); never log passwords, tokens, or secrets; expire access tokens within 15 minutes; return generic 5xx errors; allow browser CORS only from configured origins. | Partial: 5xx details are redacted and CORS is allowlisted. Authentication, token handling, password hashing, and security headers are not implemented. |
+| **Authorization** | Every protected route authenticates first, then enforces the server-side role/permission matrix; never trust role claims supplied only by the client. | Not implemented: only the public health route currently exists. |
+| **Performance** | In the reference staging environment, API p95 latency <= 500 ms at 50 concurrent users with 10,000 products; health-check p95 <= 200 ms. | Unverified: catalog APIs and load tests do not exist yet. |
+| **Availability** | >= 99.5% monthly uptime after production deployment, excluding planned maintenance; publish a health check for monitoring. | Unverified: the app is not deployed and has no uptime monitoring. |
+| **Scalability** | Support 50 concurrent users and 10,000 products without manual database intervention; confirm with a repeatable staging load test. | Unverified: no load-test suite or deployed environment. |
+| **Usability** | Complete checkout in no more than 4 steps from cart to confirmation; provide specific, actionable validation errors; support 320px-wide screens without horizontal page overflow. | Partial: responsive storefront exists; checkout flow and its error states are not implemented. |
+| **Data integrity** | Enforce stock >= 0 and order-item quantity > 0 in the database; create an order and decrement stock in one transaction. | Partial: relational foreign keys exist, but stock/quantity checks and checkout transactions are not implemented. |
+
+Performance, availability, and scalability values are provisional MVP targets. Record the staging hardware, dataset, and load-test results when those requirements are verified; do not report them as achieved before then.
 
 ## 6. Assumptions & Constraints
 

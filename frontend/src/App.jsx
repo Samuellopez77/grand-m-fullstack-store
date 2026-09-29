@@ -10,7 +10,11 @@ const navItems = [
   { label: 'About', route: 'about' },
 ]
 
-const getRoute = () => window.location.hash.replace(/^#\/?/, '') || 'home'
+const getRoute = () => {
+  const hashRoute = window.location.hash.replace(/^#\/?/, '').split(/[?&]/, 1)[0]
+  if (hashRoute.startsWith('figmacapture=')) return new URLSearchParams(window.location.search).get('route') || 'home'
+  return hashRoute || 'home'
+}
 const formatPrice = (price) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price / 100)
 const landingSlides = [
   { image: 'grandm-look-statement-sneaker.jpg', kicker: 'GRAND_M / 01', title: 'Built to make an entrance.', route: 'sneakers' },
@@ -68,6 +72,7 @@ function App() {
 
   return (
     <div className="site-shell">
+      <a className="skip-link" href="#main-content">Skip to content</a>
       <div className="announcement"></div>
       <Header
         cartCount={cartCount}
@@ -81,7 +86,7 @@ function App() {
         toggleTheme={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
       />
       <MobileMenu isOpen={menuOpen} navigate={navigate} route={route} />
-      <main>
+      <main id="main-content">
         {route === 'home' && <HomePage {...pageProps} />}
         {route === 'collections' && <ShopPage {...pageProps} key="collections" title="The collection" />}
         {categoryDetails[route] && <ShopPage {...pageProps} category={route} key={route} title={categoryDetails[route].title} />}
@@ -122,7 +127,7 @@ function Header({ cartCount, menuOpen, navigate, onCart, onMenu, onSearch, route
 }
 
 function Brand({ navigate }) {
-  return <button className="brand" onClick={() => navigate('home')} type="button"><img className="grand_m-logo" src="..\public\images\others\Grand_M_Logo.png" alt="GRAND_M" /><span>GRAND_M<small>collections</small></span></button>
+  return <button className="brand" onClick={() => navigate('home')} type="button"><img className="grand_m-logo" src="/images/others/Grand_M_Logo.png" alt="GRAND_M" /><span>GRAND_M<small>collections</small></span></button>
 }
 
 function MobileMenu({ isOpen, navigate, route }) {
@@ -237,8 +242,46 @@ function AboutPage({ navigate }) {
 
 function AuthPage({ mode, navigate }) {
   const [submitted, setSubmitted] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const isLogin = mode === 'login'
-  return <section className="auth-page"><form className="auth-card" onSubmit={(event) => { event.preventDefault(); setSubmitted(true) }}><Brand navigate={navigate} /><p className="eyebrow">Your GRAND_M account</p><h1>{isLogin ? 'Welcome back.' : 'Create your account.'}</h1><p className="auth-subtitle">{isLogin ? 'Sign in to keep your collection close.' : 'Join us for a faster, more personal checkout.'}</p>{!isLogin && <label>Full name<input autoComplete="name" name="name" required type="text" /></label>}<label>Email address<input autoComplete="email" name="email" required type="email" /></label><label>Password<input autoComplete={isLogin ? 'current-password' : 'new-password'} minLength="6" name="password" required type="password" /></label><button className="button primary auth-submit" type="submit">{isLogin ? 'Sign in' : 'Create account'} ›</button>{submitted && <p className="form-message">Thanks—this form is ready to connect to your account API.</p>}<p className="auth-switch">{isLogin ? 'New to GRAND_M?' : 'Already have an account?'} <button onClick={() => navigate(isLogin ? 'signup' : 'login')} type="button">{isLogin ? 'Create one' : 'Sign in'}</button></p></form></section>
+  return (
+    <section className="auth-page">
+      <aside className="auth-editorial">
+        <div aria-hidden="true" className="basket-scene">
+          <div className="basket-handle" />
+          <div className="basket-products">
+            <img alt="" className="basket-item basket-item-one" src="/images/tops/IMG-2.jpeg" />
+            <img alt="" className="basket-item basket-item-two" src="/images/hoodies/Hoodie-2.jpeg" />
+            <img alt="" className="basket-item basket-item-three" src="/images/sneakers/Sneaker.jpeg" />
+          </div>
+          <div className="basket-body"><img alt="" src="/images/others/Grand_M_Logo.png" /></div>
+          <div className="basket-shadow" />
+        </div>
+        <div className="auth-editorial-copy">
+          <p className="eyebrow">GRAND_M / Collections</p>
+          <h2>Good pieces. Great days.</h2>
+          <p>Everyday essentials with a point of view.</p>
+        </div>
+      </aside>
+      <form className="auth-card" onSubmit={(event) => { event.preventDefault(); setSubmitted(true) }}>
+        <Brand navigate={navigate} />
+        <p className="eyebrow">Your GRAND_M account</p>
+        <h1>{isLogin ? 'Welcome back.' : 'Create your account.'}</h1>
+        <p className="auth-subtitle">{isLogin ? 'Sign in to keep your collection close.' : 'Join us for a faster, more personal checkout.'}</p>
+        {!isLogin && <label>Full name<input autoComplete="name" name="name" required type="text" /></label>}
+        <label>Email address<input autoComplete="email" name="email" required type="email" /></label>
+        <label>Password
+          <span className="password-input">
+            <input autoComplete={isLogin ? 'current-password' : 'new-password'} minLength="6" name="password" required type={showPassword ? 'text' : 'password'} />
+            <button aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} className="password-toggle" onClick={() => setShowPassword((visible) => !visible)} type="button">{showPassword ? 'Hide' : 'Show'}</button>
+          </span>
+        </label>
+        <button className="button primary auth-submit" type="submit">{isLogin ? 'Sign in' : 'Create account'} <span aria-hidden="true">›</span></button>
+        {submitted && <p aria-live="polite" className="form-message">Thanks—this form is ready to connect to your account API.</p>}
+        <p className="auth-switch">{isLogin ? 'New to GRAND_M?' : 'Already have an account?'} <button onClick={() => navigate(isLogin ? 'signup' : 'login')} type="button">{isLogin ? 'Create one' : 'Sign in'}</button></p>
+      </form>
+    </section>
+  )
 }
 
 function NotFound({ navigate }) {

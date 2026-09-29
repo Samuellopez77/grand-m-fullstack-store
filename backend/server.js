@@ -15,8 +15,20 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 const frontendDist = path.resolve(__dirname, '../frontend/dist');
+const developmentOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+const configuredOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const allowedOrigins = configuredOrigins.length
+  ? configuredOrigins
+  : process.env.NODE_ENV === 'production' ? [] : developmentOrigins;
 
-app.use(cors());
+app.use(cors({
+  origin(origin, callback) {
+    callback(null, !origin || allowedOrigins.includes(origin));
+  },
+}));
 app.use(express.json());
 
 // ----- API routes -----
