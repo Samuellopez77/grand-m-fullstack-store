@@ -68,7 +68,7 @@ function App() {
 
   return (
     <div className="site-shell">
-      <p className="announcement">Complimentary shipping on orders over $75</p>
+      <div className="announcement"></div>
       <Header
         cartCount={cartCount}
         menuOpen={menuOpen}
@@ -122,7 +122,7 @@ function Header({ cartCount, menuOpen, navigate, onCart, onMenu, onSearch, route
 }
 
 function Brand({ navigate }) {
-  return <button className="brand" onClick={() => navigate('home')} type="button"><b>GM</b><span>GRAND_M<small>collections</small></span></button>
+  return <button className="brand" onClick={() => navigate('home')} type="button"><img className="grand_m-logo" src="..\public\images\others\Grand_M_Logo.png" alt="GRAND_M" /><span>GRAND_M<small>collections</small></span></button>
 }
 
 function MobileMenu({ isOpen, navigate, route }) {

@@ -1,12 +1,12 @@
 # GRAND_M full-stack store
 
-An e-commerce project with a React storefront and an Express/MongoDB backend.
+An e-commerce project with a React storefront and an Express/PostgreSQL backend.
 
 ## Project structure
 
 - `frontend/` — active React + Vite application
 - `frontend/public/images/landing/` — professionally named landing-gallery images
-- `backend/serverside/` — Express server and MongoDB connection
+- `backend/` — Express server, Prisma schema, and PostgreSQL (Supabase) connection
 
 ## Development
 
@@ -18,12 +18,21 @@ npm install
 npm run dev
 ```
 
-For a production-style server, build the frontend first and then start Express:
+Run the API during backend work:
+
+```bash
+cd backend
+npm install
+npx prisma migrate dev
+npm run dev
+```
+
+For a production-style server, build the frontend first and then start the backend:
 
 ```bash
 cd frontend
 npm run build
-cd ../backend/serverside
+cd ../backend
 npm start
 ```
 

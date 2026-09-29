@@ -1,54 +1,57 @@
-# Memory / Decision Log
+# Decision & Session Log
 
-Running log of decisions made and why — so context isn't lost as the team
-(or time) moves on. Add a dated entry whenever a non-obvious choice is made.
+Running log of significant decisions and debugging sessions on GRAND_M —
+why things are the way they are, not just what changed. Useful for future-you
+(and anyone else reading this repo) to understand reasoning that a code diff
+alone doesn't show.
 
-## Decisions
+---
 
-### 2026-09-21 — Backend restructured
-Moved from a single `server.js` doing everything to a layered structure
-(`config/`, `routes/`, `controllers/`, `middleware/`). Reason: a single file
-doesn't scale past a couple of routes and made the project harder to review.
+## 2026-09-29 — Role structure defined
 
-### 2026-09-21 — Config externalized
-`MONGO_URI` and `PORT` moved from hardcoded values into `.env` (via
-`dotenv`). Reason: hardcoded secrets/config break the moment you deploy,
-add a teammate, or rotate credentials.
+Three top-level roles: `ADMIN`, `CUSTOMER`, `STAFF`. Staff is a single role
+with a `department` field (rather than five separate roles) — chosen for
+flexibility: adding a new department later doesn't require a schema/permission
+rewrite, just a new enum value.
 
-### 2026-09-21 — Fail-fast DB connection
-If MongoDB is unreachable at startup, the process exits instead of running
-in a degraded state. Reason: a "server" that can't reach its database
-shouldn't pretend to be healthy.
+Departments, in order of the order lifecycle: Inventory → Orders → Delivery →
+Support → Finance. MVP will implement Inventory + Orders first; Delivery/
+Support/Finance are designed for but not yet built out.
 
-### 2026-09-21 — Folder renamed `backend/serverside` → `backend`
-Reason: "backend" and "serverside" were redundant naming.
+## 2026-09-29 — Database migration: MongoDB → PostgreSQL + Prisma
 
-### 2026-09-21 — Converted CommonJS → ES Modules
-Switched `require`/`module.exports` to `import`/`export` project-wide.
-Reason: team preference for the modern JS module standard.
+Originally scaffolded on MongoDB/Mongoose. Switched after schema design work
+surfaced that:
+- User/Order/Product relationships are fixed and relational, not
+  variable-shape documents — not playing to MongoDB's actual strength
+- Checkout requires atomicity (decrement stock + create order must succeed
+  or fail together) — native ACID transactions in a relational DB are the
+  more natural fit
+- Splitting Products (Mongo) from Users/Orders (SQL) was considered and
+  rejected — breaks atomic checkout across database boundaries for no real
+  benefit, since product data isn't actually irregular enough to need
+  MongoDB's flexibility
 
-### 2026-09-21 — Added ESLint
-Flat config (`eslint.config.js`), catches unused vars, `==` vs `===`,
-undefined globals. Reason: catches mistakes (like a stray leftover
-`require` in an ESM project) automatically instead of relying on manual review.
+Chose Supabase as the hosted Postgres provider (free tier, easy dashboard,
+generous enough for a practice project) and Prisma as the ORM (type-safe
+queries, schema-as-source-of-truth, solid migration tooling).
 
-### 2026-09-21 — Product domain defined
-Grand_M is an e-commerce platform: browse collections, cart, checkout,
-place orders. Documented in `docs/PRD.md`.
+## 2026-09-29 — Backend rebuilt from scratch
 
-### 2026-09-21 — Roles defined
-Three top-level roles: Admin, Customer, Staff. Staff splits into five
-specializations: Product/Inventory Manager, Order Manager, Delivery Staff,
-Customer Support, Finance Staff. Admin treated as a superset of all staff
-permissions. Full breakdown and permissions matrix in `docs/SRS.md`.
+Repeated `npm install` corruption/hangs traced to the project living inside
+a OneDrive-synced `Desktop` folder — OneDrive was interfering with
+`node_modules` writes (visible as `EFTYPE` errors on `esbuild` binaries).
+Moved the whole project to `C:\dev\` (outside any OneDrive-tracked path),
+wiped and reinstalled clean.
 
-## Open Questions
+Separately: `npx prisma init` defaulted to Prisma `8.0.0-rc.17` (a
+release-candidate CLI version incompatible with the schema/config approach
+used here). Pinned both `prisma` and `@prisma/client` to `6.16.3` explicitly
+to resolve.
 
-- What's the first resource/model to build (likely `User` with role/staffType, or `Product`)?
-- Frontend framework/tooling — not yet decided
-- Test runner — not yet decided
-- Deployment target — not yet decided
-- Payment provider — not yet decided (see `docs/SRS.md` §6 Assumptions & Constraints)
-- Can a customer self-cancel an order, or only via Support? (see `docs/SRS.md` §7)
-- Product variants (size/color) in scope for MVP, or single-SKU only?
-- Delivery: in-house staff only, or third-party courier integration later?
+`server.js` also had a latent bug from the original scaffold: it used
+CommonJS `require()` in a `"type": "module"` project, which meant it never
+actually booted. Rewritten in proper ESM syntax during the rebuild.
+
+Result: backend now boots clean, connects to Supabase Postgres via Prisma,
+and `/api/health` responds correctly.

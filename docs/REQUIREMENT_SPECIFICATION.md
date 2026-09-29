@@ -34,23 +34,23 @@ and site configuration.
 
 ## 3. Permissions Matrix
 
-✅ = full access · 👁 = read-only · 🔒 = scoped to own records only · — = no access
+[x] = full access · [o] = read-only · locked = scoped to own records only · — = no access
 
 | Action | Admin | Inventory Mgr | Order Mgr | Delivery Staff | Cust. Support | Finance Staff | Customer | Guest |
 |---|---|---|---|---|---|---|---|---|
-| Browse collections/products | ✅ | ✅ | ✅ | — | ✅ | — | ✅ | ✅ |
-| Manage products/collections | ✅ | ✅ | — | — | — | — | — | — |
-| Add to cart / checkout | — | — | — | — | — | — | ✅ | — |
-| View own orders | — | — | — | — | — | — | ✅ | — |
-| View all orders | ✅ | — | ✅ | — | 👁 | 👁 | — | — |
-| Update order status | ✅ | — | ✅ | 🔒 delivery status only | — | — | — | — |
-| View/manage assigned deliveries | ✅ | — | — | 🔒 | — | — | — | — |
-| Handle support inquiries | ✅ | — | — | — | ✅ | — | — | — |
-| Request refund | ✅ | — | — | — | ✅ (request only) | — | — | — |
-| Approve/process refund | ✅ | — | — | — | — | ✅ | — | — |
-| View financial reports | ✅ | — | — | — | — | ✅ | — | — |
-| Manage staff accounts/roles | ✅ | — | — | — | — | — | — | — |
-| Site configuration | ✅ | — | — | — | — | — | — | — |
+| Browse collections/products | [x] | [x] | [x] | — | [x] | — | [x] | [x] |
+| Manage products/collections | [x] | [x] | — | — | — | — | — | — |
+| Add to cart / checkout | — | — | — | — | — | — | [x] | — |
+| View own orders | — | — | — | — | — | — | [x] | — |
+| View all orders | [x] | — | [x] | — | [o] | [o] | — | — |
+| Update order status | [x] | — | [x] | locked delivery status only | — | — | — | — |
+| View/manage assigned deliveries | [x] | — | — | locked | — | — | — | — |
+| Handle support inquiries | [x] | — | — | — | [x] | — | — | — |
+| Request refund | [x] | — | — | — | [x] (request only) | — | — | — |
+| Approve/process refund | [x] | — | — | — | — | [x] | — | — |
+| View financial reports | [x] | — | — | — | — | [x] | — | — |
+| Manage staff accounts/roles | [x] | — | — | — | — | — | — | — |
+| Site configuration | [x] | — | — | — | — | — | — | — |
 
 ## 4. Functional Requirements
 

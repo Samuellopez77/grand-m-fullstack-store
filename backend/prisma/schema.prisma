@@ -1,0 +1,97 @@
+// GRAND_M — Prisma schema (PostgreSQL)
+// Run: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------- Enums ----------
+
+enum Role {
+  ADMIN
+  CUSTOMER
+  STAFF
+}
+
+enum Department {
+  INVENTORY
+  ORDERS
+  DELIVERY
+  SUPPORT
+  FINANCE
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+// ---------- Models ----------
+
+model User {
+  id         String      @id @default(uuid())
+  name       String
+  email      String      @unique
+  password   String      // hashed with bcrypt — never store plain text
+  role       Role        @default(CUSTOMER)
+  department Department? // only set when role = STAFF
+
+  orders     Order[]
+
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@map("users")
+}
+
+model Product {
+  id        String      @id @default(uuid())
+  name      String
+  category  String      // sneakers | hoodies | tops
+  price     Int         // stored in cents/pesewas
+  image     String
+  stock     Int         @default(0)
+
+  orderItems OrderItem[]
+
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("products")
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+
+  items     OrderItem[]
+  status    OrderStatus @default(PENDING)
+  total     Int
+
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id              String  @id @default(uuid())
+  orderId         String
+  order           Order   @relation(fields: [orderId], references: [id])
+  productId       String
+  product         Product @relation(fields: [productId], references: [id])
+  quantity        Int
+  priceAtPurchase Int
+
+  @@map("order_items")
+}

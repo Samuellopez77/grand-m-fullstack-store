@@ -15,8 +15,13 @@ See `backend/.env.example` for the current list:
 | Var | Purpose | Example |
 |---|---|---|
 | `PORT` | Port the server listens on | `3000` |
-| `MONGO_URI` | MongoDB connection string | `mongodb://127.0.0.1:27017/Grand_m_users` |
+| `DATABASE_URL` | Pooled PostgreSQL connection (Supabase, used at runtime) | `postgresql://postgres.[ref]:[password]@[host]:6543/postgres?pgbouncer=true` |
+| `DIRECT_URL` | Direct PostgreSQL connection (used only by Prisma migrations) | `postgresql://postgres.[ref]:[password]@[host]:5432/postgres` |
 | `NODE_ENV` | Environment mode | `development` |
+
+Note: if the database password contains special characters (`@`, `#`, `%`,
+etc.), they must be percent-encoded in the connection string or Prisma will
+fail to parse it correctly.
 
 ## Deploy Steps
 
