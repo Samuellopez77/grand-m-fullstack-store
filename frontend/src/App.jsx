@@ -1,37 +1,51 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
-import { categoryDetails, products, productImage } from './products.js'
-
-const navItems = [
-  { label: 'Home', route: 'home' },
-  { label: "Men’s collection", route: 'collections' },
-  { label: 'Sneakers', route: 'sneakers' },
-  { label: 'Hoodies', route: 'hoodies' },
-  { label: 'About', route: 'about' },
-]
+import { categoryDetails, products } from './products.js'
+import CartDrawer from './components/cart/CartDrawer.jsx'
+import Footer from './components/layout/Footer.jsx'
+import Header from './components/layout/Header.jsx'
+import MobileMenu from './components/layout/MobileMenu.jsx'
+import AboutPage from './components/pages/AboutPage.jsx'
+import AuthPage from './components/pages/AuthPage.jsx'
+import ShopPage from './components/pages/ShopPage.jsx'
+import HomePage from './components/pages/HomePage.jsx'
+import NotFound from './components/pages/NotFound.jsx'
+import ProductDetailPage from './components/pages/ProductDetailPage.jsx'
+import CheckoutPage from './components/pages/CheckoutPage.jsx'
+import CartPage from './components/pages/CartPage.jsx'
+import AccountPage from './components/pages/AccountPage.jsx'
+import OrderHistoryPage from './components/pages/OrderHistoryPage.jsx'
 
 const getRoute = () => {
   const hashRoute = window.location.hash.replace(/^#\/?/, '').split(/[?&]/, 1)[0]
   if (hashRoute.startsWith('figmacapture=')) return new URLSearchParams(window.location.search).get('route') || 'home'
   return hashRoute || 'home'
 }
-const formatPrice = (price) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price / 100)
-const landingSlides = [
-  { image: 'grandm-look-statement-sneaker.jpg', kicker: 'GRAND_M / 01', title: 'Built to make an entrance.', route: 'sneakers' },
-  { image: 'grandm-look-everyday-shirt.jpg', kicker: 'GRAND_M / 02', title: 'Your everyday, elevated.', route: 'tops' },
-  { image: 'grandm-look-comfort-hoodie.jpg', kicker: 'GRAND_M / 03', title: 'Comfort that moves with you.', route: 'hoodies' },
-  { image: 'grandm-look-tailored-casual.jpg', kicker: 'GRAND_M / 04', title: 'A sharper kind of casual.', route: 'collections' },
-  { image: 'grandm-look-next-sneaker.jpg', kicker: 'GRAND_M / 05', title: 'The next pair starts here.', route: 'sneakers' },
-  { image: 'grandm-look-designer-dress-shoe.jpg', kicker: 'GRAND_M / 06', title: 'Made for the well dressed.', route: 'sneakers' },
-  { image: 'grandm-look-resort-shirt.jpg', kicker: 'GRAND_M / 07', title: 'Easy pieces. Strong point of view.', route: 'tops' },
-]
-const landingImage = (image) => encodeURI(`/images/landing/${image}`)
+
+const loadCart = () => {
+  try {
+    const savedItems = JSON.parse(localStorage.getItem('grand-m-cart') || '[]')
+    if (!Array.isArray(savedItems)) return []
+
+    return savedItems.reduce((items, savedItem) => {
+      if (!savedItem || typeof savedItem.id !== 'string' || !Number.isSafeInteger(savedItem.quantity) || savedItem.quantity < 1) return items
+      const product = products.find((item) => item.id === savedItem.id)
+      if (!product) return items
+      const existing = items.find((item) => item.id === product.id)
+      if (existing) existing.quantity += savedItem.quantity
+      else items.push({ ...product, quantity: savedItem.quantity })
+      return items
+    }, [])
+  } catch {
+    return []
+  }
+}
 
 function App() {
   const [route, setRoute] = useState(getRoute)
   const [menuOpen, setMenuOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
-  const [cart, setCart] = useState([])
+  const [cart, setCart] = useState(loadCart)
   const [query, setQuery] = useState('')
   const [theme, setTheme] = useState(() => localStorage.getItem('grand-m-theme') || 'dark')
 
@@ -40,6 +54,18 @@ function App() {
     window.addEventListener('hashchange', handleHashChange)
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [route])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('grand-m-cart', JSON.stringify(cart.map(({ id, quantity }) => ({ id, quantity }))))
+    } catch {
+      return
+    }
+  }, [cart])
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -68,13 +94,16 @@ function App() {
 
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0)
   const pageProps = { addToCart, navigate, query, setQuery }
-  const knownRoutes = ['home', 'collections', 'about', 'login', 'signup', ...Object.keys(categoryDetails)]
+  const knownRoutes = ['home', 'collections', 'about', 'login', 'signup', 'forgot-password', 'account', 'orders', 'cart', 'checkout', ...Object.keys(categoryDetails)]
+  const isAuthRoute = ['login', 'signup', 'forgot-password'].includes(route)
+  const productRoute = route.match(/^product\/([^/]+)$/)
+  const selectedProduct = productRoute ? products.find((product) => product.id === productRoute[1]) : null
 
   return (
     <div className="site-shell">
       <a className="skip-link" href="#main-content">Skip to content</a>
       <div className="announcement"></div>
-      <Header
+      {!isAuthRoute && <Header
         cartCount={cartCount}
         menuOpen={menuOpen}
         navigate={navigate}
@@ -84,218 +113,27 @@ function App() {
         route={route}
         theme={theme}
         toggleTheme={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
-      />
-      <MobileMenu isOpen={menuOpen} navigate={navigate} route={route} />
+      />}
+      {!isAuthRoute && <MobileMenu isOpen={menuOpen} navigate={navigate} route={route} />}
       <main id="main-content">
         {route === 'home' && <HomePage {...pageProps} />}
-        {route === 'collections' && <ShopPage {...pageProps} key="collections" title="The collection" />}
+        {route === 'collections' && <ShopPage {...pageProps} key="collections" title="Men’s collection" />}
         {categoryDetails[route] && <ShopPage {...pageProps} category={route} key={route} title={categoryDetails[route].title} />}
         {route === 'about' && <AboutPage navigate={navigate} />}
-        {route === 'login' && <AuthPage mode="login" navigate={navigate} />}
-        {route === 'signup' && <AuthPage mode="signup" navigate={navigate} />}
-        {!knownRoutes.includes(route) && <NotFound navigate={navigate} />}
+        {route === 'login' && <AuthPage key={route} mode="login" navigate={navigate} />}
+        {route === 'signup' && <AuthPage key={route} mode="signup" navigate={navigate} />}
+        {route === 'forgot-password' && <AuthPage key={route} mode="reset" navigate={navigate} />}
+        {route === 'account' && <AccountPage navigate={navigate} />}
+        {route === 'orders' && <OrderHistoryPage navigate={navigate} />}
+        {route === 'cart' && <CartPage cart={cart} navigate={navigate} updateCart={updateCart} />}
+        {route === 'checkout' && <CheckoutPage cart={cart} navigate={navigate} updateCart={updateCart} />}
+        {selectedProduct && <ProductDetailPage key={selectedProduct.id} addToCart={addToCart} navigate={navigate} product={selectedProduct} />}
+        {(!knownRoutes.includes(route) && !productRoute) || (productRoute && !selectedProduct) ? <NotFound navigate={navigate} /> : null}
       </main>
-      <Footer navigate={navigate} />
-      <CartDrawer cart={cart} isOpen={cartOpen} onClose={() => setCartOpen(false)} updateCart={updateCart} />
+      {!isAuthRoute && <Footer navigate={navigate} />}
+      {!isAuthRoute && <CartDrawer cart={cart} isOpen={cartOpen} onCheckout={() => { setCartOpen(false); navigate('checkout') }} onClose={() => setCartOpen(false)} onViewCart={() => { setCartOpen(false); navigate('cart') }} updateCart={updateCart} />}
     </div>
   )
-}
-
-function Header({ cartCount, menuOpen, navigate, onCart, onMenu, onSearch, route, theme, toggleTheme }) {
-  const [search, setSearch] = useState('')
-  const submit = (event) => { event.preventDefault(); onSearch(search.trim()) }
-
-  return (
-    <header className="site-header">
-      <div className="header-inner">
-        <button aria-expanded={menuOpen} aria-label="Toggle menu" className="round-button menu-button" onClick={onMenu} type="button">{menuOpen ? '×' : '☰'}</button>
-        <Brand navigate={navigate} />
-        <nav className="desktop-nav" aria-label="Primary navigation">
-          {navItems.map((item) => <button className={route === item.route ? 'active' : ''} key={item.route} onClick={() => navigate(item.route)} type="button">{item.label}</button>)}
-        </nav>
-        <form className="header-search" onSubmit={submit} role="search">
-          <input aria-label="Search products" onChange={(event) => setSearch(event.target.value)} placeholder="Search the collection" value={search} />
-          <button aria-label="Search" type="submit">⌕</button>
-        </form>
-        <div className="header-actions">
-          <button aria-label="Change color theme" className="round-button theme-button" onClick={toggleTheme} type="button">{theme === 'dark' ? '☀' : '◐'}</button>
-          <button aria-label="Open shopping cart" className="round-button cart-button" onClick={onCart} type="button">♧{cartCount > 0 && <span>{cartCount}</span>}</button>
-        </div>
-      </div>
-    </header>
-  )
-}
-
-function Brand({ navigate }) {
-  return <button className="brand" onClick={() => navigate('home')} type="button"><img className="grand_m-logo" src="/images/others/Grand_M_Logo.png" alt="GRAND_M" /><span>GRAND_M<small>collections</small></span></button>
-}
-
-function MobileMenu({ isOpen, navigate, route }) {
-  return (
-    <aside aria-hidden={!isOpen} className={`mobile-menu ${isOpen ? 'is-open' : ''}`}>
-      <p className="eyebrow">Explore GRAND_M</p>
-      {navItems.map((item) => <button className={route === item.route ? 'active' : ''} key={item.route} onClick={() => navigate(item.route)} tabIndex={isOpen ? 0 : -1} type="button">{item.label}<span>›</span></button>)}
-      <button onClick={() => navigate('login')} tabIndex={isOpen ? 0 : -1} type="button">Sign in<span>›</span></button>
-    </aside>
-  )
-}
-
-function HomePage({ addToCart, navigate }) {
-  const sneakers = products.filter((product) => product.category === 'sneakers').slice(0, 4)
-  const hoodies = products.filter((product) => product.category === 'hoodies').slice(0, 4)
-
-  return (
-    <>
-      <section className="hero-section">
-        <div className="hero-copy">
-          <p className="eyebrow">GRAND_M / 2026 collection</p>
-          <h1>Designed for the way you move.</h1>
-          <p>Statement sneakers, premium hoodies, and everyday pieces selected for your next chapter.</p>
-          <div className="hero-actions"><button className="button primary" onClick={() => navigate('collections')} type="button">Shop the collection <span>›</span></button><button className="button quiet" onClick={() => navigate('about')} type="button">Our story</button></div>
-        </div>
-        <HeroGallery navigate={navigate} />
-      </section>
-      <section className="value-strip"><p><b>01</b> Curated essentials</p><p><b>02</b> Secure checkout</p><p><b>03</b> Easy 30-day returns</p></section>
-      <section className="content-section">
-        <div className="section-heading"><div><p className="eyebrow">Browse by mood</p><h2>Built around your rotation.</h2></div></div>
-        <div className="category-cards">
-          {Object.entries(categoryDetails).map(([key, category]) => <button className="category-card" key={key} onClick={() => navigate(key)} type="button"><img alt="" src={category.cover} /><div><p>{category.kicker}</p><strong>{category.title}</strong><em>Explore ›</em></div></button>)}
-        </div>
-      </section>
-      <ProductRail addToCart={addToCart} navigate={navigate} products={sneakers} route="sneakers" title="Fresh sneaker energy" />
-      <ProductRail addToCart={addToCart} navigate={navigate} products={hoodies} route="hoodies" title="Layers worth living in" />
-      <section className="editorial-banner"><p className="eyebrow">The GRAND_M standard</p><h2>Style should feel personal, not precious.</h2><button className="text-button" onClick={() => navigate('about')} type="button">Meet the collection ›</button></section>
-    </>
-  )
-}
-
-function HeroGallery({ navigate }) {
-  const [activeIndex, setActiveIndex] = useState(0)
-  const activeSlide = landingSlides[activeIndex]
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setActiveIndex((index) => (index + 1) % landingSlides.length)
-    }, 4500)
-    return () => window.clearInterval(intervalId)
-  }, [])
-
-  return (
-    <section aria-label="Featured product gallery" className="hero-gallery">
-      <p className="gallery-vertical-label">Always in motion</p>
-      <div className="gallery-stage">
-        <div className="gallery-frame">
-          <img alt={activeSlide.title} className="gallery-image" key={activeSlide.image} src={landingImage(activeSlide.image)} />
-          <div className="gallery-overlay">
-            <p>{activeSlide.kicker}</p>
-            <h2>{activeSlide.title}</h2>
-            <button onClick={() => navigate(activeSlide.route)} type="button">Discover piece <span>›</span></button>
-          </div>
-        </div>
-      </div>
-      <div className="gallery-controls">
-        <button aria-label="Show previous featured image" onClick={() => setActiveIndex((index) => (index - 1 + landingSlides.length) % landingSlides.length)} type="button">←</button>
-        <div className="gallery-dots">
-          {landingSlides.map((slide, index) => <button aria-label={`Show ${slide.title}`} className={index === activeIndex ? 'active' : ''} key={slide.image} onClick={() => setActiveIndex(index)} type="button" />)}
-        </div>
-        <button aria-label="Show next featured image" onClick={() => setActiveIndex((index) => (index + 1) % landingSlides.length)} type="button">→</button>
-      </div>
-    </section>
-  )
-}
-
-function ProductRail({ addToCart, navigate, products: railProducts, route, title }) {
-  return <section className="content-section rail-section"><div className="section-heading"><div><p className="eyebrow">Just in</p><h2>{title}</h2></div><button className="text-button" onClick={() => navigate(route)} type="button">Shop all ›</button></div><div className="product-rail">{railProducts.map((product) => <ProductCard addToCart={addToCart} key={product.id} product={product} />)}</div></section>
-}
-
-function ShopPage({ addToCart, category, query, setQuery, title }) {
-  const [activeCategory, setActiveCategory] = useState(category || 'all')
-  const [sort, setSort] = useState('featured')
-  const availableProducts = useMemo(() => {
-    const term = query.trim().toLowerCase()
-    const filtered = products.filter((product) => (activeCategory === 'all' || product.category === activeCategory) && (!term || `${product.name} ${product.category}`.toLowerCase().includes(term)))
-    if (sort === 'price-low') return [...filtered].sort((a, b) => a.price - b.price)
-    if (sort === 'price-high') return [...filtered].sort((a, b) => b.price - a.price)
-    if (sort === 'name') return [...filtered].sort((a, b) => a.name.localeCompare(b.name))
-    return filtered
-  }, [activeCategory, query, sort])
-
-  return <section className="content-section shop-page">
-    <div className="page-intro"><p className="eyebrow">GRAND_M collection</p><h1>{title}</h1><p>{category ? categoryDetails[category].description : 'A considered lineup of sneakers, hoodies, and elevated tops.'}</p></div>
-    <div className="shop-toolbar">
-      <div className="filters">{['all', ...Object.keys(categoryDetails)].map((key) => <button className={activeCategory === key ? 'active' : ''} key={key} onClick={() => setActiveCategory(key)} type="button">{key === 'all' ? 'All' : categoryDetails[key].title}</button>)}</div>
-      <div className="shop-controls"><label className="filter-search">⌕<input aria-label="Filter products" onChange={(event) => setQuery(event.target.value)} placeholder="Filter products" value={query} /></label><select aria-label="Sort products" onChange={(event) => setSort(event.target.value)} value={sort}><option value="featured">Featured</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="name">Name: A to Z</option></select></div>
-    </div>
-    <p className="result-count">{availableProducts.length} {availableProducts.length === 1 ? 'piece' : 'pieces'} available</p>
-    {availableProducts.length ? <div className="product-grid">{availableProducts.map((product) => <ProductCard addToCart={addToCart} key={product.id} product={product} />)}</div> : <div className="empty-state"><h2>No matches found</h2><p>Try a different search or browse the entire collection.</p><button className="button primary" onClick={() => { setQuery(''); setActiveCategory('all') }} type="button">Clear filters</button></div>}
-  </section>
-}
-
-function ProductCard({ addToCart, product }) {
-  const [quantity, setQuantity] = useState(1)
-  return <article className="product-card"><div className="product-image"><img alt={product.name} loading="lazy" src={productImage(product.image)} /><span>{categoryDetails[product.category].kicker}</span></div><div className="product-details"><div><h3>{product.name}</h3><p>{categoryDetails[product.category].title}</p></div><strong>{formatPrice(product.price)}</strong></div><div className="product-actions"><select aria-label={`Quantity for ${product.name}`} onChange={(event) => setQuantity(Number(event.target.value))} value={quantity}>{[1, 2, 3, 4, 5].map((number) => <option key={number} value={number}>{number}</option>)}</select><button onClick={() => addToCart(product, quantity)} type="button">Add to cart</button></div></article>
-}
-
-function AboutPage({ navigate }) {
-  return <section className="about-page"><div className="content-section about-intro"><p className="eyebrow">About GRAND_M</p><h1>Make room for the pieces that make you feel like yourself.</h1><p>GRAND_M Collections brings together contemporary essentials with an eye for comfort, confidence, and individual expression.</p></div><div className="content-section about-grid"><img alt="GRAND_M collections" src="/images/others/GRAND_M.png" /><div><p className="eyebrow">Our approach</p><h2>Fewer, better choices.</h2><p>We curate versatile streetwear and footwear that earns a place in your everyday rotation—not just a spot in your wardrobe.</p><p>Every collection is designed to make getting dressed feel direct, easy, and distinctly yours.</p><button className="button primary" onClick={() => navigate('collections')} type="button">Explore the collection ›</button></div></div><div className="content-section principles">{[['01', 'Wear often', 'Products chosen for repeat wear, not one-off moments.'], ['02', 'Move freely', 'Comfort and movement are part of every decision.'], ['03', 'Own your look', 'A selection with room for your personal style.']].map(([number, title, copy]) => <article key={number}><span>{number}</span><h3>{title}</h3><p>{copy}</p></article>)}</div></section>
-}
-
-function AuthPage({ mode, navigate }) {
-  const [submitted, setSubmitted] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const isLogin = mode === 'login'
-  return (
-    <section className="auth-page">
-      <aside className="auth-editorial">
-        <div aria-hidden="true" className="basket-scene">
-          <div className="basket-handle" />
-          <div className="basket-products">
-            <img alt="" className="basket-item basket-item-one" src="/images/tops/IMG-2.jpeg" />
-            <img alt="" className="basket-item basket-item-two" src="/images/hoodies/Hoodie-2.jpeg" />
-            <img alt="" className="basket-item basket-item-three" src="/images/sneakers/Sneaker.jpeg" />
-          </div>
-          <div className="basket-body"><img alt="" src="/images/others/Grand_M_Logo.png" /></div>
-          <div className="basket-shadow" />
-        </div>
-        <div className="auth-editorial-copy">
-          <p className="eyebrow">GRAND_M / Collections</p>
-          <h2>Good pieces. Great days.</h2>
-          <p>Everyday essentials with a point of view.</p>
-        </div>
-      </aside>
-      <form className="auth-card" onSubmit={(event) => { event.preventDefault(); setSubmitted(true) }}>
-        <Brand navigate={navigate} />
-        <p className="eyebrow">Your GRAND_M account</p>
-        <h1>{isLogin ? 'Welcome back.' : 'Create your account.'}</h1>
-        <p className="auth-subtitle">{isLogin ? 'Sign in to keep your collection close.' : 'Join us for a faster, more personal checkout.'}</p>
-        {!isLogin && <label>Full name<input autoComplete="name" name="name" required type="text" /></label>}
-        <label>Email address<input autoComplete="email" name="email" required type="email" /></label>
-        <label>Password
-          <span className="password-input">
-            <input autoComplete={isLogin ? 'current-password' : 'new-password'} minLength="6" name="password" required type={showPassword ? 'text' : 'password'} />
-            <button aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} className="password-toggle" onClick={() => setShowPassword((visible) => !visible)} type="button">{showPassword ? 'Hide' : 'Show'}</button>
-          </span>
-        </label>
-        <button className="button primary auth-submit" type="submit">{isLogin ? 'Sign in' : 'Create account'} <span aria-hidden="true">›</span></button>
-        {submitted && <p aria-live="polite" className="form-message">Thanks—this form is ready to connect to your account API.</p>}
-        <p className="auth-switch">{isLogin ? 'New to GRAND_M?' : 'Already have an account?'} <button onClick={() => navigate(isLogin ? 'signup' : 'login')} type="button">{isLogin ? 'Create one' : 'Sign in'}</button></p>
-      </form>
-    </section>
-  )
-}
-
-function NotFound({ navigate }) {
-  return <section className="empty-state not-found"><p className="eyebrow">404</p><h1>This page stepped out.</h1><p>Let’s get you back to the collection.</p><button className="button primary" onClick={() => navigate('home')} type="button">Back home</button></section>
-}
-
-function CartDrawer({ cart, isOpen, onClose, updateCart }) {
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  return <><button aria-label="Close cart" className={`cart-backdrop ${isOpen ? 'visible' : ''}`} onClick={onClose} tabIndex={isOpen ? 0 : -1} type="button" /><aside aria-hidden={!isOpen} className={`cart-drawer ${isOpen ? 'is-open' : ''}`}><div className="drawer-heading"><div><p className="eyebrow">Your selection</p><h2>Shopping bag</h2></div><button aria-label="Close cart" className="round-button" onClick={onClose} type="button">×</button></div>{cart.length ? <><div className="cart-items">{cart.map((item) => <article className="cart-item" key={item.id}><img alt={item.name} src={productImage(item.image)} /><div><h3>{item.name}</h3><p>{formatPrice(item.price)}</p><div className="quantity"><button aria-label={`Remove one ${item.name}`} onClick={() => updateCart(item.id, -1)} type="button">−</button><span>{item.quantity}</span><button aria-label={`Add one ${item.name}`} onClick={() => updateCart(item.id, 1)} type="button">+</button></div></div><strong>{formatPrice(item.price * item.quantity)}</strong></article>)}</div><div className="cart-total"><div><span>Subtotal</span><strong>{formatPrice(total)}</strong></div><p>Shipping and tax are calculated at checkout.</p><button className="button primary" type="button">Checkout ›</button></div></> : <div className="empty-cart"><p className="eyebrow">Nothing here yet</p><h3>Your bag is waiting.</h3><p>Add a few pieces to make it yours.</p><button className="button primary" onClick={onClose} type="button">Keep shopping</button></div>}</aside></>
-}
-
-
-function Footer({ navigate }) {
-  return <footer className="site-footer"><div className="footer-brand"><Brand navigate={navigate} /><p>Curated sneakers, hoodies, and essentials for every move.</p></div><div><p>Shop</p>{navItems.slice(1, 4).map((item) => <button key={item.route} onClick={() => navigate(item.route)} type="button">{item.label}</button>)}</div><div><p>Account</p><button onClick={() => navigate('login')} type="button">Sign in</button><button onClick={() => navigate('signup')} type="button">Create account</button><button onClick={() => navigate('about')} type="button">About us</button></div><small>© {new Date().getFullYear()} GRAND_M Collections</small></footer>
 }
 
 export default App

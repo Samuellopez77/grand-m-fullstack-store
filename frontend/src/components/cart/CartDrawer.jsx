@@ -1,0 +1,9 @@
+import { productImage } from '../../products.js'
+import formatPrice from '../../utils/formatPrice.js'
+
+function CartDrawer({ cart, isOpen, onCheckout, onClose, onViewCart, updateCart }) {
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  return <><button aria-label="Close cart" className={`cart-backdrop ${isOpen ? 'visible' : ''}`} onClick={onClose} tabIndex={isOpen ? 0 : -1} type="button" /><aside aria-hidden={!isOpen} className={`cart-drawer ${isOpen ? 'is-open' : ''}`}><div className="drawer-heading"><div><p className="eyebrow">Your selection</p><h2>Shopping bag</h2></div><button aria-label="Close cart" className="round-button" onClick={onClose} type="button">×</button></div>{cart.length ? <><div className="cart-items">{cart.map((item) => <article className="cart-item" key={item.id}><img alt={item.name} src={productImage(item.image)} /><div><h3>{item.name}</h3><p>{formatPrice(item.price)}</p><div className="quantity"><button aria-label={`Remove one ${item.name}`} onClick={() => updateCart(item.id, -1)} type="button">−</button><span>{item.quantity}</span><button aria-label={`Add one ${item.name}`} onClick={() => updateCart(item.id, 1)} type="button">+</button></div></div><strong>{formatPrice(item.price * item.quantity)}</strong></article>)}</div><div className="cart-total"><div><span>Subtotal</span><strong>{formatPrice(total)}</strong></div><p>Shipping and tax are calculated at checkout.</p><button className="button primary" onClick={onCheckout} type="button">Checkout ›</button><button className="cart-view-full" onClick={onViewCart} type="button">View full bag</button></div></> : <div className="empty-cart"><p className="eyebrow">Nothing here yet</p><h3>Your bag is waiting.</h3><p>Add a few pieces to make it yours.</p><button className="button primary" onClick={onClose} type="button">Keep shopping</button></div>}</aside></>
+}
+
+export default CartDrawer

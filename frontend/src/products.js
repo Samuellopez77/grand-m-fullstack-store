@@ -1,7 +1,7 @@
 export const categoryDetails = {
-  sneakers: { title: 'Sneakers', kicker: 'Step out', description: 'Silhouettes that bring energy to every move.', cover: '/images/sneakers/Sneakers%20Collection.jpeg' },
+  tops: { title: 'Shirts', kicker: 'Everyday form', description: 'Refined staples that hold their own from day to night.', cover: '/images/tops/IMG-2.jpeg' },
   hoodies: { title: 'Hoodies', kicker: 'Layer up', description: 'Soft, substantial layers made for the long haul.', cover: '/images/hoodies/Hoodie-2.jpeg' },
-  tops: { title: 'Tops', kicker: 'Everyday form', description: 'Refined staples that hold their own from day to night.', cover: '/images/tops/IMG-2.jpeg' },
+  sneakers: { title: 'Sneakers', kicker: 'Step out', description: 'Silhouettes that bring energy to every move.', cover: '/images/sneakers/Sneakers%20Collection.jpeg' },
 }
 
 const tops = [['IMG-1.jpeg', 'Classic YSL black', 1290], ['IMG-2.jpeg', 'Classic YSL brown', 1450], ['IMG-3.jpeg', 'Classic YSL cream', 1100], ['IMG-8.jpeg', 'Classic YSL white', 1600], ['IMG-5.jpeg', 'Zipped style army green', 1600], ['IMG-6.jpeg', 'Classic men cream', 1600], ['IMG-7.jpeg', 'Classic Lacoste blue', 1600]]
