@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
-import { categoryDetails, products, productImage } from '../../products.js'
+import { categoryDetails, productImage } from '../../products.js'
 import CategoryImageCycler from '../products/CategoryImageCycler.jsx'
 import ProductCard from '../products/ProductCard.jsx'
 
-function ShopPage({ addToCart, category, navigate, query, setQuery, title }) {
+function ShopPage({ addToCart, category, navigate, products, query, setQuery, title }) {
   const [activeCategory, setActiveCategory] = useState(category || 'all')
   const [sort, setSort] = useState('featured')
   const isCollectionLanding = !category
@@ -17,7 +17,7 @@ function ShopPage({ addToCart, category, navigate, query, setQuery, title }) {
     count: products.filter((product) => product.category === key).length,
     index: String(index + 1).padStart(2, '0'),
     }
-  }), [])
+  }), [products])
   const availableProducts = useMemo(() => {
     const term = query.trim().toLowerCase()
     const filtered = products.filter((product) => (activeCategory === 'all' || product.category === activeCategory) && (!term || `${product.name} ${product.category}`.toLowerCase().includes(term)))
@@ -25,7 +25,7 @@ function ShopPage({ addToCart, category, navigate, query, setQuery, title }) {
     if (sort === 'price-high') return [...filtered].sort((a, b) => b.price - a.price)
     if (sort === 'name') return [...filtered].sort((a, b) => a.name.localeCompare(b.name))
     return filtered
-  }, [activeCategory, query, sort])
+  }, [activeCategory, products, query, sort])
 
   return <section className={`content-section shop-page ${isCollectionLanding ? 'collection-page' : ''}`}>
     <div className="page-intro shop-intro"><p className="eyebrow">{category ? `GRAND_M / ${categoryDetails[category].kicker}` : 'GRAND_M / 2026 collection'}</p><div className="shop-intro-line"><div><h1>{title}</h1><p>{category ? categoryDetails[category].description : 'A considered rotation of everyday essentials, selected to move with you.'}</p></div>{isCollectionLanding && <span className="collection-edition">01 <i /> 03&nbsp; / &nbsp;{products.length} PIECES</span>}</div></div>

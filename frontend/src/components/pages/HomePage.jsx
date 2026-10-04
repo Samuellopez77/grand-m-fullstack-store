@@ -1,8 +1,8 @@
-import { categoryDetails, products } from '../../products.js'
+import { categoryDetails } from '../../products.js'
 import HeroGallery from '../home/HeroGallery.jsx'
 import ProductRail from '../products/ProductRail.jsx'
 
-function HomePage({ addToCart, navigate }) {
+function HomePage({ addToCart, navigate, products }) {
   const sneakers = products.filter((product) => product.category === 'sneakers').slice(0, 4)
   const hoodies = products.filter((product) => product.category === 'hoodies').slice(0, 4)
 

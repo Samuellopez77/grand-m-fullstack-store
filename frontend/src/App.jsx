@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
-import { categoryDetails, products } from './products.js'
+import { categoryDetails } from './products.js'
+import { fetchProducts } from './api/products.js'
 import CartDrawer from './components/cart/CartDrawer.jsx'
 import Footer from './components/layout/Footer.jsx'
 import Header from './components/layout/Header.jsx'
@@ -22,14 +23,18 @@ const getRoute = () => {
   return hashRoute || 'home'
 }
 
-const loadCart = () => {
+// Reconciles the cart saved in localStorage (just {id, quantity} pairs)
+// against the real product list fetched from the API. Takes the product
+// list as a param now, since it's no longer a static import available at
+// module-load time.
+const loadCart = (productList) => {
   try {
     const savedItems = JSON.parse(localStorage.getItem('grand-m-cart') || '[]')
     if (!Array.isArray(savedItems)) return []
 
     return savedItems.reduce((items, savedItem) => {
       if (!savedItem || typeof savedItem.id !== 'string' || !Number.isSafeInteger(savedItem.quantity) || savedItem.quantity < 1) return items
-      const product = products.find((item) => item.id === savedItem.id)
+      const product = productList.find((item) => item.id === savedItem.id)
       if (!product) return items
       const existing = items.find((item) => item.id === product.id)
       if (existing) existing.quantity += savedItem.quantity
@@ -45,9 +50,22 @@ function App() {
   const [route, setRoute] = useState(getRoute)
   const [menuOpen, setMenuOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
-  const [cart, setCart] = useState(loadCart)
+  const [products, setProducts] = useState([])
+  const [productsLoading, setProductsLoading] = useState(true)
+  const [productsError, setProductsError] = useState(null)
+  const [cart, setCart] = useState([])
   const [query, setQuery] = useState('')
   const [theme, setTheme] = useState(() => localStorage.getItem('grand-m-theme') || 'dark')
+
+  useEffect(() => {
+    fetchProducts()
+      .then((data) => {
+        setProducts(data)
+        setCart(loadCart(data))
+      })
+      .catch((err) => setProductsError(err.message))
+      .finally(() => setProductsLoading(false))
+  }, [])
 
   useEffect(() => {
     const handleHashChange = () => setRoute(getRoute())
@@ -60,12 +78,16 @@ function App() {
   }, [route])
 
   useEffect(() => {
+    // Skip saving while products are still loading — otherwise this fires
+    // on first render (cart still []) and overwrites a real saved cart in
+    // localStorage with an empty one, before loadCart() gets a chance to run.
+    if (productsLoading) return
     try {
       localStorage.setItem('grand-m-cart', JSON.stringify(cart.map(({ id, quantity }) => ({ id, quantity }))))
     } catch {
       return
     }
-  }, [cart])
+  }, [cart, productsLoading])
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -93,7 +115,7 @@ function App() {
   }
 
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0)
-  const pageProps = { addToCart, navigate, query, setQuery }
+  const pageProps = { addToCart, navigate, query, setQuery, products }
   const knownRoutes = ['home', 'collections', 'about', 'login', 'signup', 'forgot-password', 'account', 'orders', 'cart', 'checkout', ...Object.keys(categoryDetails)]
   const isAuthRoute = ['login', 'signup', 'forgot-password'].includes(route)
   const productRoute = route.match(/^product\/([^/]+)$/)
@@ -116,19 +138,23 @@ function App() {
       />}
       {!isAuthRoute && <MobileMenu isOpen={menuOpen} navigate={navigate} route={route} />}
       <main id="main-content">
-        {route === 'home' && <HomePage {...pageProps} />}
-        {route === 'collections' && <ShopPage {...pageProps} key="collections" title="Men’s collection" />}
-        {categoryDetails[route] && <ShopPage {...pageProps} category={route} key={route} title={categoryDetails[route].title} />}
-        {route === 'about' && <AboutPage navigate={navigate} />}
-        {route === 'login' && <AuthPage key={route} mode="login" navigate={navigate} />}
-        {route === 'signup' && <AuthPage key={route} mode="signup" navigate={navigate} />}
-        {route === 'forgot-password' && <AuthPage key={route} mode="reset" navigate={navigate} />}
-        {route === 'account' && <AccountPage navigate={navigate} />}
-        {route === 'orders' && <OrderHistoryPage navigate={navigate} />}
-        {route === 'cart' && <CartPage cart={cart} navigate={navigate} updateCart={updateCart} />}
-        {route === 'checkout' && <CheckoutPage cart={cart} navigate={navigate} updateCart={updateCart} />}
-        {selectedProduct && <ProductDetailPage key={selectedProduct.id} addToCart={addToCart} navigate={navigate} product={selectedProduct} />}
-        {(!knownRoutes.includes(route) && !productRoute) || (productRoute && !selectedProduct) ? <NotFound navigate={navigate} /> : null}
+        {productsLoading && <div className="content-section"><p>Loading products…</p></div>}
+        {!productsLoading && productsError && <div className="content-section"><p>Couldn't load products: {productsError}</p></div>}
+        {!productsLoading && !productsError && <>
+          {route === 'home' && <HomePage {...pageProps} />}
+          {route === 'collections' && <ShopPage {...pageProps} key="collections" title="Men's collection" />}
+          {categoryDetails[route] && <ShopPage {...pageProps} category={route} key={route} title={categoryDetails[route].title} />}
+          {route === 'about' && <AboutPage navigate={navigate} />}
+          {route === 'login' && <AuthPage key={route} mode="login" navigate={navigate} />}
+          {route === 'signup' && <AuthPage key={route} mode="signup" navigate={navigate} />}
+          {route === 'forgot-password' && <AuthPage key={route} mode="reset" navigate={navigate} />}
+          {route === 'account' && <AccountPage navigate={navigate} />}
+          {route === 'orders' && <OrderHistoryPage navigate={navigate} />}
+          {route === 'cart' && <CartPage cart={cart} navigate={navigate} updateCart={updateCart} />}
+          {route === 'checkout' && <CheckoutPage cart={cart} navigate={navigate} updateCart={updateCart} />}
+          {selectedProduct && <ProductDetailPage key={selectedProduct.id} addToCart={addToCart} navigate={navigate} product={selectedProduct} />}
+          {(!knownRoutes.includes(route) && !productRoute) || (productRoute && !selectedProduct) ? <NotFound navigate={navigate} /> : null}
+        </>}
       </main>
       {!isAuthRoute && <Footer navigate={navigate} />}
       {!isAuthRoute && <CartDrawer cart={cart} isOpen={cartOpen} onCheckout={() => { setCartOpen(false); navigate('checkout') }} onClose={() => setCartOpen(false)} onViewCart={() => { setCartOpen(false); navigate('cart') }} updateCart={updateCart} />}
@@ -137,6 +163,3 @@ function App() {
 }
 
 export default App
-
-
-
