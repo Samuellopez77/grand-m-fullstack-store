@@ -55,3 +55,47 @@ actually booted. Rewritten in proper ESM syntax during the rebuild.
 
 Result: backend now boots clean, connects to Supabase Postgres via Prisma,
 and `/api/health` responds correctly.
+
+## 2026-09-30 — .env leaked to public GitHub repo
+
+`backend/.env` (real Supabase credentials, password included) was committed
+and pushed to the public repo. Root cause: no `backend/.gitignore` existed —
+only the root `.gitignore` (which just excludes `node_modules`) was in place,
+so `.env` was never excluded from tracking.
+
+Fixed by: deleting the compromised Supabase project entirely (no real data
+existed yet, so nothing lost — stronger than just rotating the password,
+since the host itself stops existing), adding `backend/.gitignore` with
+`.env` *before* creating the replacement project, untracking the old file
+with `git rm --cached`, then re-running `prisma migrate dev` against the
+fresh database. `.env.example` was confirmed to only ever contain
+placeholders — safe to keep tracked.
+
+Lesson: every subfolder with its own secrets needs its own `.gitignore`
+check — a root-level one doesn't automatically cover nested folders' needs.
+
+## 2026-09-30 to 2026-10-04 — Local work sat unpushed for a full session
+
+Built the seed script, Products API, live frontend wiring, mobile menu fix,
+and the CI workflow — all confirmed working locally (including visually, in
+the browser) — but none of it was actually committed/pushed until explicitly
+checked. Commit messages were drafted in conversation but `git add/commit/push`
+never followed, so GitHub stayed several steps behind local reality with no
+obvious signal that anything was wrong.
+
+Caught by deliberately re-pulling the live repo and diffing it against what
+was expected, rather than assuming "I ran the commands we talked about"
+meant they'd actually been run.
+
+Once pushed, CI caught two real issues immediately:
+- `frontend/src/api/products.js` had been saved as `api-products.js` instead
+  (download-card filename vs. the name the import statement expected) —
+  broke the Vite build with an unresolved import
+- `prisma validate` in CI failed because `DATABASE_URL`/`DIRECT_URL` weren't
+  set in the workflow — Prisma needs the env vars to *exist* (placeholder
+  values are fine) even for a connection-less schema check
+
+Lesson: "it works on my machine" and "it's on GitHub" are different claims —
+verify the second one directly (`git status`, or re-pull the repo) instead
+of inferring it from the first. This is exactly what CI is for: it caught
+both issues within minutes of actually being run for the first time.
