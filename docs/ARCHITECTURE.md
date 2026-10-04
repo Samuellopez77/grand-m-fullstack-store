@@ -42,7 +42,8 @@ backend/
 
 As resources are added, each gets one file per layer: e.g. a "products"
 resource adds `routes/products.routes.js`, `controllers/products.controller.js`,
-using the `Product` model already defined in `prisma/schema.prisma`.
+using the `Product` model already defined in 
++`prisma/schema.prisma`.
 
 ## Data Flow
 
