@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import Brand from '../layout/Brand.jsx'
 
-function AuthPage({ mode, navigate }) {
+function AuthPage({ mode, navigate, onLogin, onRegister }) {
   const [values, setValues] = useState({ name: '', email: '', password: '', confirmPassword: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [notice, setNotice] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
   const isLogin = mode === 'login'
   const isSignup = mode === 'signup'
   const isReset = mode === 'reset'
@@ -15,25 +16,41 @@ function AuthPage({ mode, navigate }) {
     { label: 'At least one number', passed: /\d/.test(values.password) },
   ]
   const updateValue = (field) => (event) => setValues((current) => ({ ...current, [field]: event.target.value }))
-  const submitForm = (event) => {
+
+  const submitForm = async (event) => {
     event.preventDefault()
+    if (submitting) return
+
+    if (isReset) {
+      setNotice({ type: 'info', text: 'Password reset is not connected yet.' })
+      return
+    }
     if (isSignup && values.password !== values.confirmPassword) {
       setNotice({ type: 'error', text: 'Your passwords do not match.' })
       return
     }
-    setNotice({
-      type: 'info',
-      text: isReset
-        ? 'Password reset is not connected yet. Your email was not sent or stored.'
-        : 'Your details look valid, but account services are not connected yet. Nothing was sent or saved.',
-    })
+
+    const email = values.email.trim()
+    const { name, password } = values
+
+    setSubmitting(true)
+    setNotice(null)
+    try {
+      if (isLogin) await onLogin({ email, password })
+      else await onRegister({ name: name.trim(), email, password })
+    } catch (err) {
+      setNotice({ type: 'error', text: err.message })
+    } finally {
+      setSubmitting(false)
+    }
   }
+
   const providerNotice = (provider) => setNotice({
     type: 'info',
     text: `${provider} sign-in is not connected yet. No account information was sent.`,
   })
 
-  return (
+  return(
     <section className="auth-page">
       <header className="auth-topbar">
         <Brand navigate={navigate} />
@@ -78,9 +95,12 @@ function AuthPage({ mode, navigate }) {
               </span>
             </label>
           </>}
-          {isLogin && <button className="auth-inline-link auth-forgot" onClick={() => navigate('forgot-password')} type="button">Forgot password?</button>}
+          {isLogin && <button className="auth-inline-link auth-forgot" onClick={() => navigate('forgot-password') } disabled={submitting} type="button">Forgot password?</button>}
         </>}
-        <button className="button primary auth-submit" type="submit">{isLogin ? 'Sign in' : isSignup ? 'Create account' : 'Send reset instructions'} <span aria-hidden="true">›</span></button>
+        <button className="button primary auth-submit" type="submit" disabled={submitting}>
+          {isLogin ? 'Sign in' : isSignup ? 'Create account' : 'Send reset instructions'}{' '}
+  <span aria-hidden="true">›</span>
+        </button>
         {notice && <p aria-live="polite" className={`auth-notice ${notice.type}`} role={notice.type === 'error' ? 'alert' : 'status'}>{notice.text}</p>}
         {!isReset && <>
           <div aria-hidden="true" className="auth-divider"><span>or continue with</span></div>

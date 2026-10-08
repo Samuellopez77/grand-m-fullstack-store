@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import { categoryDetails } from './products.js'
 import { fetchProducts } from './api/products.js'
+import { login, register, logout, restoreSession } from './api/auth.js'
 import CartDrawer from './components/cart/CartDrawer.jsx'
 import Footer from './components/layout/Footer.jsx'
 import Header from './components/layout/Header.jsx'
@@ -55,6 +56,8 @@ function App() {
   const [productsError, setProductsError] = useState(null)
   const [cart, setCart] = useState([])
   const [query, setQuery] = useState('')
+  const [user, setUser] = useState(null)
+  const [authReady, setAuthReady] = useState(false)
   const [theme, setTheme] = useState(() => localStorage.getItem('grand-m-theme') || 'dark')
 
   useEffect(() => {
@@ -65,6 +68,12 @@ function App() {
       })
       .catch((err) => setProductsError(err.message))
       .finally(() => setProductsLoading(false))
+  }, [])
+
+  useEffect(() => {
+    restoreSession()
+      .then((restoredUser) => setUser(restoredUser))
+      .finally(() => setAuthReady(true))
   }, [])
 
   useEffect(() => {
@@ -98,6 +107,23 @@ function App() {
     window.location.hash = `/${nextRoute}`
     setMenuOpen(false)
   }
+  const handleLogin = async (credentials) => {
+    const loggedInUser = await login(credentials)
+    setUser(loggedInUser)
+    navigate('account')
+  }
+
+  const handleRegister = async (details) => {
+    const newUser = await register(details)
+    setUser(newUser)
+    navigate('account')
+  }
+
+  const handleLogout = async () => {
+    await logout()
+    setUser(null)
+    navigate('home')
+  }
 
   const addToCart = (product, quantity) => {
     setCart((items) => {
@@ -115,7 +141,7 @@ function App() {
   }
 
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0)
-  const pageProps = { addToCart, navigate, query, setQuery, products }
+  const pageProps = { addToCart, navigate, query, setQuery, products, handleLogin, handleRegister, handleLogout }
   const knownRoutes = ['home', 'collections', 'about', 'login', 'signup', 'forgot-password', 'account', 'orders', 'cart', 'checkout', ...Object.keys(categoryDetails)]
   const isAuthRoute = ['login', 'signup', 'forgot-password'].includes(route)
   const productRoute = route.match(/^product\/([^/]+)$/)
@@ -138,18 +164,17 @@ function App() {
       />}
       {!isAuthRoute && <MobileMenu isOpen={menuOpen} navigate={navigate} route={route} />}
       <main id="main-content">
-        {productsLoading && <div className="content-section"><p>Loading products…</p></div>}
-        {!productsLoading && productsError && <div className="content-section"><p>Couldn't load products: {productsError}</p></div>}
-        {!productsLoading && !productsError && <>
+        {(productsLoading || !authReady) && <div className="content-section"><p>Loading…</p></div>}        {!productsLoading && productsError && <div className="content-section"><p>Couldn't load products: {productsError}</p></div>}
+        {!productsLoading && !productsError && authReady && <>
           {route === 'home' && <HomePage {...pageProps} />}
           {route === 'collections' && <ShopPage {...pageProps} key="collections" title="Men's collection" />}
           {categoryDetails[route] && <ShopPage {...pageProps} category={route} key={route} title={categoryDetails[route].title} />}
           {route === 'about' && <AboutPage navigate={navigate} />}
-          {route === 'login' && <AuthPage key={route} mode="login" navigate={navigate} />}
-          {route === 'signup' && <AuthPage key={route} mode="signup" navigate={navigate} />}
+          {route === 'login' && <AuthPage key={route} mode="login" navigate={navigate} onLogin={handleLogin} />}
+          {route === 'signup' && <AuthPage key={route} mode="signup" navigate={navigate} onRegister={handleRegister} />}
+          {route === 'account' && (user ? <AccountPage navigate={navigate} user={user} onLogout={handleLogout} /> : <AuthPage key="login-gate" mode="login" navigate={navigate} onLogin={handleLogin} />)}
+          {route === 'orders' && (user ? <OrderHistoryPage navigate={navigate} /> : <AuthPage key="login-gate-orders" mode="login" navigate={navigate} onLogin={handleLogin} />)}
           {route === 'forgot-password' && <AuthPage key={route} mode="reset" navigate={navigate} />}
-          {route === 'account' && <AccountPage navigate={navigate} />}
-          {route === 'orders' && <OrderHistoryPage navigate={navigate} />}
           {route === 'cart' && <CartPage cart={cart} navigate={navigate} updateCart={updateCart} />}
           {route === 'checkout' && <CheckoutPage cart={cart} navigate={navigate} updateCart={updateCart} />}
           {selectedProduct && <ProductDetailPage key={selectedProduct.id} addToCart={addToCart} navigate={navigate} product={selectedProduct} />}

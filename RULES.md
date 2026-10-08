@@ -41,3 +41,8 @@
 - [ ] `npm run lint` passes
 - [ ] New env vars (if any) are added to `.env.example`
 - [ ] New endpoints (if any) are documented in `docs/API.md`
+
+## Database
+
+- Every new table must have **RLS** enabled in the same migration that creates it:
+**ALTER TABLE** public.<table> **ENABLE ROW LEVEL SECURITY**;
