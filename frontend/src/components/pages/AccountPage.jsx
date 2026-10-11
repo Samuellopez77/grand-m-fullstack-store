@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-function AccountPage({ navigate }) {
+function AccountPage({ navigate, user, onLogout }) {
   const [activeSection, setActiveSection] = useState('profile')
   const [addressEditorOpen, setAddressEditorOpen] = useState(false)
   const [notice, setNotice] = useState('')
@@ -12,20 +12,21 @@ function AccountPage({ navigate }) {
 
   return <section className="account-page">
     <header className="account-heading"><div><p className="eyebrow">GRAND_M / Account</p><h1>Your account.</h1><p>Manage your profile and delivery details.</p></div><button className="account-store-link" onClick={() => navigate('collections')} type="button"><span aria-hidden="true">←</span> Continue shopping</button></header>
-    <p className="account-preview-note"><span aria-hidden="true">◇</span> Account services are not connected yet. Changes on this page are preview only.</p>
+    <p className="account-preview-note"><span aria-hidden="true">◇</span> Profile and address changes aren’t saved yet. Changes on this page are preview only.</p>
     <div className="account-layout">
       <nav aria-label="Account sections" className="account-navigation">
         <button aria-current={activeSection === 'profile' ? 'page' : undefined} className={activeSection === 'profile' ? 'active' : ''} onClick={() => { setActiveSection('profile'); setNotice('') }} type="button">Profile <span aria-hidden="true">›</span></button>
         <button aria-current={activeSection === 'addresses' ? 'page' : undefined} className={activeSection === 'addresses' ? 'active' : ''} onClick={() => { setActiveSection('addresses'); setNotice('') }} type="button">Saved addresses <span aria-hidden="true">›</span></button>
         <button onClick={() => navigate('orders')} type="button">Order history <span aria-hidden="true">↗</span></button>
         <button className="account-password-link" onClick={() => navigate('forgot-password')} type="button">Change password <span aria-hidden="true">↗</span></button>
+        <button className="account-password-link" onClick={onLogout} type="button">Sign out <span aria-hidden="true"></span></button> 
       </nav>
       <section aria-label={activeSection === 'profile' ? 'Profile details' : 'Saved addresses'} className="account-panel">
         {activeSection === 'profile' ? <>
           <div className="account-panel-heading"><div><p className="eyebrow">Personal details</p><h2>Profile</h2></div></div>
           <form className="account-form" onSubmit={showPreviewNotice}>
-            <label>Full name<input autoComplete="name" maxLength="100" name="name" required /></label>
-            <label>Email address<input autoComplete="email" maxLength="254" name="email" required type="email" /></label>
+            <label>Full name<input autoComplete="name" defaultValue={user.name} maxLength="100" name="name" required /></label>
+            <label>Email address<input autoComplete="email" defaultValue={user.email} maxLength="254" name="email" required type="email" /></label>
             <label>Phone number<input autoComplete="tel" maxLength="32" name="phone" type="tel" /></label>
             <div className="account-form-actions"><button className="button primary" type="submit">Save profile</button></div>
           </form>
