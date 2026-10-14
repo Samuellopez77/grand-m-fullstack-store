@@ -117,7 +117,10 @@ export async function refresh(req, res, next) {
       return res.status(401).json({ error: 'User no longer exists' });
     }
 
-    res.json({ accessToken: signAccessToken(user) });
+    res.json({
+      accessToken: signAccessToken(user),
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    });
   } catch (err) {
     next(err);
   }

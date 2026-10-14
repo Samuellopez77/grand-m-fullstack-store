@@ -120,7 +120,11 @@ function App() {
   }
 
   const handleLogout = async () => {
-    await logout()
+    try {
+      await logout()
+    } catch {
+      // server unreachable: still clear the UI session
+    }
     setUser(null)
     navigate('home')
   }
@@ -158,13 +162,15 @@ function App() {
         onCart={() => setCartOpen(true)}
         onMenu={() => setMenuOpen((open) => !open)}
         onSearch={(nextQuery) => { setQuery(nextQuery); navigate('collections') }}
+        user={user}
         route={route}
         theme={theme}
         toggleTheme={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
       />}
-      {!isAuthRoute && <MobileMenu isOpen={menuOpen} navigate={navigate} route={route} />}
+      {!isAuthRoute && <MobileMenu isOpen={menuOpen} navigate={navigate} route={route} user={user} onLogout={handleLogout} />}
       <main id="main-content">
-        {(productsLoading || !authReady) && <div className="content-section"><p>Loading…</p></div>}        {!productsLoading && productsError && <div className="content-section"><p>Couldn't load products: {productsError}</p></div>}
+        {(productsLoading || !authReady) && <div className="content-section"><p>Loading…</p></div>}        
+        {!productsLoading && productsError && <div className="content-section"><p>Couldn't load products: {productsError}</p></div>}
         {!productsLoading && !productsError && authReady && <>
           {route === 'home' && <HomePage {...pageProps} />}
           {route === 'collections' && <ShopPage {...pageProps} key="collections" title="Men's collection" />}
@@ -181,7 +187,7 @@ function App() {
           {(!knownRoutes.includes(route) && !productRoute) || (productRoute && !selectedProduct) ? <NotFound navigate={navigate} /> : null}
         </>}
       </main>
-      {!isAuthRoute && <Footer navigate={navigate} />}
+      {!isAuthRoute && <Footer navigate={navigate} user={user} onLogout={handleLogout} />}
       {!isAuthRoute && <CartDrawer cart={cart} isOpen={cartOpen} onCheckout={() => { setCartOpen(false); navigate('checkout') }} onClose={() => setCartOpen(false)} onViewCart={() => { setCartOpen(false); navigate('cart') }} updateCart={updateCart} />}
     </div>
   )

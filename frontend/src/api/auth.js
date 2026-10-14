@@ -43,9 +43,9 @@ export async function restoreSession() {
   try {
     const data = await request('/refresh', { method: 'POST' })
     accessToken = data.accessToken
-    return true
+    return data.user
   } catch {
-    return false
+    return null
   }
 }
 
