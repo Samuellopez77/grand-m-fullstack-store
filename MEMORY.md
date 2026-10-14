@@ -99,3 +99,30 @@ Lesson: "it works on my machine" and "it's on GitHub" are different claims —
 verify the second one directly (`git status`, or re-pull the repo) instead
 of inferring it from the first. This is exactly what CI is for: it caught
 both issues within minutes of actually being run for the first time.
+
+## 2026-10-07: Authentication (Milestone v0.2)
+
+**Decision:** We handle auth ourselves with JWTs. We do not use Supabase Auth.
+Supabase is only the Postgres host, and all database access goes through Express and Prisma.
+
+**Token design**
+- Access token: JWT, 15 minutes, sent as `Authorization: Bearer`, kept **in memory only** on the frontend (never `localStorage`).
+- Refresh token: JWT, 7 days, in an `httpOnly`, `SameSite=Strict` cookie scoped to `/api/auth`.
+- On page load the frontend calls `/refresh` to restore the session.
+- Why: a script injected by XSS cannot read an httpOnly cookie, and a stolen access token expires in minutes.
+
+**Other decisions**
+- Passwords hashed with bcrypt, cost 12.
+- Register always sets `role: 'CUSTOMER'`. ADMIN and STAFF accounts will be seeded or created by an admin, never through public signup.
+- Wrong email and wrong password return the same 401 message, to prevent account enumeration.
+- CORS allows credentials; the cookie is `secure` in production.
+
+**Deferred**
+- Email verification (issue filed, v0.3): needs an email provider; required before checkout.
+- Password reset by email (same dependency).
+- Auth tests (tracked in the tests issue).
+- Logout button, account page and signed-in header (small follow-up PR).
+
+**Lessons**
+- Both ternaries in `submitForm` ran in sequence, so each submit called the handler twice. Use `if / else`, not stacked ternaries, to choose an action.
+- `npm run lint` catches syntax slips (a stray `}` here) before CI does.
