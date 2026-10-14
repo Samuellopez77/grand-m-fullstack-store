@@ -187,7 +187,7 @@ function App() {
           {(!knownRoutes.includes(route) && !productRoute) || (productRoute && !selectedProduct) ? <NotFound navigate={navigate} /> : null}
         </>}
       </main>
-      {!isAuthRoute && <Footer navigate={navigate} />}
+      {!isAuthRoute && <Footer navigate={navigate} user={user} onLogout={handleLogout} />}
       {!isAuthRoute && <CartDrawer cart={cart} isOpen={cartOpen} onCheckout={() => { setCartOpen(false); navigate('checkout') }} onClose={() => setCartOpen(false)} onViewCart={() => { setCartOpen(false); navigate('cart') }} updateCart={updateCart} />}
     </div>
   )
