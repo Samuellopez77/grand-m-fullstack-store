@@ -9,7 +9,7 @@ Status: Draft · Date: 2026-10-14 · Owner: team
 | Staff layout | Separate pages per department (`/staff/inventory`, `/staff/orders`, `/staff/delivery`, `/staff/support`, `/staff/finance`) |
 | Admin scope | Management plus day-to-day work. Admin can do everything every staff department can do. |
 | Order states | `PLACED`, `CONFIRMED`, `PROCESSING`, `READY`, `OUT_FOR_DELIVERY`, `DELIVERED`, `FAILED`, `CANCELLED` |
-| Email provider | **Resend (free tier). Testing uses your own account email. Use a verified domain only if you deploy publicly.** (recommended: Resend). Needed for email verification, password reset, and order confirmations. |
+| Email provider | **Resend (free tier). Testing uses your own account email. Use a verified domain only if you deploy publicly.**. Needed for email verification, password reset, and order confirmations. |
 | Test runner | Backend: `node:test` + `supertest`. Frontend: Vitest + React Testing Library. |
 
 ## 2. Access model
@@ -70,7 +70,7 @@ Who can move an order:
 - Orders staff: `PLACED → CONFIRMED → PROCESSING → READY`
 - Delivery staff: `READY → OUT_FOR_DELIVERY → DELIVERED / FAILED` (own assignments only)
 - Admin: any transition
-- Customer support: Customer support: request refunds (SRS FR-6.3). Cancellation rules are an open question. (SRS 4.6)
+- Customer support: request refunds (SRS FR-6.3). Cancellation rules are an open question. (SRS 4.6)
 
 Transitions are enforced on the server with an allowed-transitions table, not by the UI.
 
