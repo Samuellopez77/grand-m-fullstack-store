@@ -1,74 +1,22 @@
-import 'dotenv/config';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import express from 'express';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
-import healthRoutes from './routes/health.routes.js';
-import productsRoutes from './routes/products.routes.js';
-import authRoutes from './routes/auth.routes.js';
-import errorHandler from './middleware/errorHandler.js';
-import prisma from './config/prisma.js';
+   import 'dotenv/config';
+   import app from './app.js';
+   import prisma from './config/prisma.js';
 
-// ESM has no __dirname built in — this is the standard way to get it back.
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+   const PORT = process.env.PORT || 3000;
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-const frontendDist = path.resolve(__dirname, '../frontend/dist');
-const developmentOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173'];
-const configuredOrigins = (process.env.CORS_ORIGIN || '')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-const allowedOrigins = configuredOrigins.length
-  ? configuredOrigins
-  : process.env.NODE_ENV === 'production' ? [] : developmentOrigins;
+   async function start() {
+     try {
+       // Fail fast: confirm the DB is reachable before accepting traffic.
+       await prisma.$connect();
+       console.log('Connected to PostgreSQL via Prisma');
 
-app.use(cors({
-  origin(origin, callback) {
-    callback(null, !origin || allowedOrigins.includes(origin));
-  },
-  // Required for the httpOnly refresh-token cookie to actually be sent/
-  // received across origins (Vite :5173 ↔ Express :3000 in dev). Without
-  // this, the browser silently drops the cookie on cross-origin requests.
-  credentials: true,
-}));
-app.use(express.json());
-app.use(cookieParser());
+       app.listen(PORT, () => {
+         console.log(`Server is live on http://localhost:${PORT}`);
+       });
+     } catch (err) {
+       console.error('Failed to connect to the database:', err.message);
+       process.exit(1);
+     }
+   }
 
-// ----- API routes -----
-app.use('/api/health', healthRoutes);
-app.use('/api/products', productsRoutes);
-app.use('/api/auth', authRoutes);
-// Anything under /api that isn't matched above is a real 404 (JSON, not the SPA index.html).
-app.use('/api', (req, res) => {
-  res.status(404).json({ error: 'Not found' });
-});
-
-// ----- Frontend (SPA) -----
-app.use(express.static(frontendDist));
-app.get('/{*splat}', (req, res) => {
-  res.sendFile(path.join(frontendDist, 'index.html'));
-});
-
-// Centralized error handler — must be registered last.
-app.use(errorHandler);
-
-async function start() {
-  try {
-    // Fail fast: confirm the DB is reachable before accepting traffic.
-    await prisma.$connect();
-    console.log('Connected to PostgreSQL via Prisma');
-
-    app.listen(PORT, () => {
-      console.log(`Server is live on http://localhost:${PORT}`);
-    });
-  } catch (err) {
-    console.error('Failed to connect to the database:', err.message);
-    process.exit(1);
-  }
-}
-
-start();
+   start();
