@@ -7,6 +7,7 @@ import healthRoutes from './routes/health.routes.js';
 import productsRoutes from './routes/products.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import errorHandler from './middleware/errorHandler.js';
+import cartRoutes from './routes/cart.routes.js';
 
 // ESM has no __dirname built in — this is the standard way to get it back.
 const __filename = fileURLToPath(import.meta.url);
@@ -38,6 +39,7 @@ app.use(cookieParser());
 // ----- API routes -----
 app.use('/api/health', healthRoutes);
 app.use('/api/products', productsRoutes);
+app.use('/api/cart', cartRoutes);
 app.use('/api/auth', authRoutes);
 // Anything under /api that isn't matched above is a real 404 (JSON, not the SPA index.html).
 app.use('/api', (req, res) => {
