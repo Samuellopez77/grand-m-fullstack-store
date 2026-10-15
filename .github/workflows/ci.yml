@@ -35,8 +35,8 @@ jobs:
         run: npx prisma generate
 
       - name: Test
-      working-directory: backend
-      run: npm test
+        working-directory: backend
+        run: npm test
 
   frontend:
     name: Frontend — lint & build
