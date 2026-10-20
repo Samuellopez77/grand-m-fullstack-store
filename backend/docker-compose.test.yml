@@ -1,0 +1,17 @@
+# Throwaway Postgres for backend tests only. Never point this at production.
+# Starts on localhost:5433 so it can't clash with a local Postgres on 5432.
+services:
+  test-db:
+    image: postgres:16
+    container_name: grandm-test-db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: grandm_test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d grandm_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 15

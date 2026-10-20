@@ -7,7 +7,7 @@ const REFRESH_TOKEN_TTL = '7d';
 const REFRESH_COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days, in ms
 
 function signAccessToken(user) {
-  return jwt.sign({ sub: user.id, role: user.role }, process.env.JWT_ACCESS_SECRET, {
+  return jwt.sign({ sub: user.id, role: user.role, department: user.department ?? null }, process.env.JWT_ACCESS_SECRET, {
     expiresIn: ACCESS_TOKEN_TTL,
   });
 }
@@ -57,7 +57,31 @@ export async function register(req, res, next) {
 
     res.status(201).json({
       accessToken,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, department: user.department ?? null },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// GET /api/auth/me
+export async function me(req, res, next) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.sub },
+      select: { id: true, name: true, email: true, role: true, department: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      department: user.department ?? null,
     });
   } catch (err) {
     next(err);
@@ -87,7 +111,7 @@ export async function login(req, res, next) {
 
     res.json({
       accessToken,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, department: user.department ?? null },
     });
   } catch (err) {
     next(err);
@@ -119,7 +143,7 @@ export async function refresh(req, res, next) {
 
     res.json({
       accessToken: signAccessToken(user),
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, department: user.department ?? null },
     });
   } catch (err) {
     next(err);
