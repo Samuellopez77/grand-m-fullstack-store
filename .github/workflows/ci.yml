@@ -10,9 +10,25 @@ jobs:
   backend:
     name: Backend — install & validate
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        ports:
+          - 5433:5432
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: grandm_test
+        options: >-
+          --health-cmd "pg_isready -U test -d grandm_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
     env:
-      DATABASE_URL: "postgresql://user:password@localhost:5432/placeholder"
-      DIRECT_URL: "postgresql://user:password@localhost:5432/placeholder"
+      DATABASE_URL: "postgresql://test:test@localhost:5433/grandm_test"
+      DIRECT_URL: "postgresql://test:test@localhost:5433/grandm_test"
+      JWT_ACCESS_SECRET: ci-access-secret
+      JWT_REFRESH_SECRET: ci-refresh-secret
     steps:
       - uses: actions/checkout@v4
 
@@ -34,9 +50,13 @@ jobs:
         working-directory: backend
         run: npx prisma generate
 
+      - name: Apply migrations to test database
+        working-directory: backend
+        run: npx prisma migrate deploy
+
       - name: Test
         working-directory: backend
-        run: npm test
+        run: node --test --test-concurrency=1 tests/*.test.js
 
   frontend:
     name: Frontend — lint & build
