@@ -55,19 +55,6 @@ app.get('/{*splat}', (req, res) => {
 // Centralized error handler — must be registered last.
 app.use(errorHandler);
 
-async function start() {
-  try {
-    // Fail fast: confirm the DB is reachable before accepting traffic.
-    await prisma.$connect();
-    console.log('Connected to PostgreSQL via Prisma');
 
-    app.listen(PORT, () => {
-      console.log(`Server is live on http://localhost:${PORT}`);
-    });
-  } catch (err) {
-    console.error('Failed to connect to the database:', err.message);
-    process.exit(1);
-  }
-}
 
 export default app;
