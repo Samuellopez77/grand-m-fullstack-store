@@ -52,6 +52,30 @@ backend/
 The server starts on `http://localhost:3000` by default (override with `PORT`
 in `.env`).
 
+## Local admin and staff preview
+
+The preview accounts use the throwaway `grandm_test` database only. Start
+Docker Desktop first, then run these commands from `backend`:
+
+```powershell
+npm run test:db:up
+npm run test:db:migrate
+npm run provision:local
+npm run dev:local
+```
+
+The provisioning command prompts for an account name, email, role, staff
+department (if applicable), and password. It refuses to run unless the
+database URL points to `localhost:5433/grandm_test`. Do not use real or
+production credentials in this test database.
+
+In a second terminal, start the frontend from `frontend` with `npm run dev`.
+Sign in with the account you just provisioned, then open `/#/admin` or
+`/#/staff`. Public signup creates customer accounts only.
+
+The backend tests truncate the test database, so running `npm test` removes
+these preview accounts. Re-run `npm run provision:local` afterward if needed.
+
 ## Database
 
 Schema is defined in `prisma/schema.prisma` and managed with Prisma Migrate.

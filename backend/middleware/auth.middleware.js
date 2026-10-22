@@ -23,9 +23,60 @@ export function requireAuth(req, res, next) {
 // Must run AFTER requireAuth on the same route, since it reads req.user.
 export function requireRole(...allowedRoles) {
   return (req, res, next) => {
-    if (!req.user || !allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
-    next();
+
+    if (req.user.role === 'ADMIN' || allowedRoles.includes(req.user.role)) {
+      return next();
+    }
+
+    return res.status(403).json({ error: 'Insufficient permissions' });
+  };
+}
+
+// Staff routes are department-scoped. Admin always passes department checks.
+export function requireDepartment(...allowedDepartments) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    if (req.user.role === 'ADMIN') {
+      return next();
+    }
+
+    if (req.user.role !== 'STAFF') {
+      return res.status(403).json({ error: 'Insufficient department permissions' });
+    }
+
+    const department = req.user.department ?? null;
+    if (!department || !allowedDepartments.includes(department)) {
+      return res.status(403).json({ error: 'Insufficient department permissions' });
+    }
+
+    return next();
+  };
+}
+
+// Useful for customer order routes: allow the owner or an admin/special role.
+export function requireOwnershipOrRole(getOwnerId, ...allowedRoles) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    if (req.user.role === 'ADMIN' || allowedRoles.includes(req.user.role)) {
+      return next();
+    }
+
+    const ownerId = typeof getOwnerId === 'function' ? getOwnerId(req) : req[getOwnerId];
+    const currentUserId = req.user.sub ?? req.user.id;
+
+    if (ownerId && String(ownerId) === String(currentUserId)) {
+      return next();
+    }
+
+    return res.status(403).json({ error: 'You do not have access to this order' });
   };
 }
