@@ -37,3 +37,4 @@ npm start
 ```
 
 The landing page automatically cycles through the images in `frontend/public/images/landing/`.
+AI usage: see [AI.md](AI.md)
