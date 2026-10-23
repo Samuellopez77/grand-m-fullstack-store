@@ -28,8 +28,8 @@ describe('cart routes require authentication', () => {
     });
 
     test(`${method} ${path} returns 401 with an invalid token`, async () => {
-      const res = await request(app)
-        [method.toLowerCase()](path)
+      const verb = method.toLowerCase();
+      const res = await request(app)[verb](path)
         .set('Authorization', 'Bearer not-a-real-token')
         .send({});
 
