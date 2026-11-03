@@ -54,8 +54,9 @@ in `.env`).
 
 ## Local admin and staff preview
 
-The preview accounts use the throwaway `grandm_test` database only. Start
-Docker Desktop first, then run these commands from `backend`:
+The preview accounts use the throwaway `grandm_test` database only. Start it
+first (Docker or a second local Postgres; see `docs/TESTING.md`), then run
+these commands from `backend`. Skip `test:db:up` if you use the no-Docker setup:
 
 ```powershell
 npm run test:db:up
@@ -84,9 +85,5 @@ your Supabase database.
 
 ## API
 
-| Method | Route         | Description          |
-|--------|---------------|-----------------------|
-| GET    | `/api/health` | Health check endpoint |
-
-Any other unmatched `/api/*` route returns a `404` JSON response. All other
+See `docs/API.md` for the endpoints. Any other unmatched `/api/*` route returns a `404` JSON response. All other
 routes fall back to the frontend's `index.html` (SPA routing).

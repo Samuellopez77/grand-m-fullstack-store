@@ -126,3 +126,31 @@ Supabase is only the Postgres host, and all database access goes through Express
 **Lessons**
 - Both ternaries in `submitForm` ran in sequence, so each submit called the handler twice. Use `if / else`, not stacked ternaries, to choose an action.
 - `npm run lint` catches syntax slips (a stray `}` here) before CI does.
+
+## 2026-10 (late): Test database without Docker
+
+**Decision:** DB-backed tests run against a throwaway Postgres on `localhost:5433` (`grandm_test`). Docker is optional.
+
+- Docker needs BIOS virtualization, which is disabled and locked on the dev machine. A second Postgres 16 cluster (`initdb` + `pg_ctl`) does the same job; steps are in `docs/TESTING.md`.
+- `resetDb()` truncates every table, so it refuses to run unless the URL contains `@localhost:5433/grandm_test`. This protects Supabase.
+- CI uses a `postgres:16` service on the same port, so local and CI match.
+- `npm run dev` talks to Supabase; `npm run dev:local` talks to the test database. Only one can hold port 3000.
+
+## 2026-10-29: Products become variants (#20)
+
+**Decision:** a product is a brand + colour + gender + category; stock lives on size variants.
+
+- Colour is a separate product (a new colour is a new row), not a variant axis. Variants are size only.
+- Brand and colour are plain strings for now (no enum); a `Brand` table can come later.
+- Category enum: SHIRTS, HOODIES, SNEAKERS. Gender enum: MALE, FEMALE, UNISEX. Men's catalogue first.
+- Cart and order items point at the variant. Order items snapshot name, brand, colour, size and price.
+- Prices are whole cedis. `active` flag archives a product instead of deleting it.
+- `CHECK (stock >= 0)` and RLS on the new table. The migration deletes the 53 demo products and any cart items; orders were empty.
+
+## 2026-11-01: UX and performance ideas triaged
+
+**Decision:** adopt the cheap, relevant ones; skip infrastructure that a one-store project doesn't need.
+
+- Adopted: pagination, no N+1, duplicate-call prevention (idempotency key + disabled button), debounced search, compression, `select`, parallel queries, lazy images, skeleton/empty/error/validation/session-expired/no-results/success states.
+- Skipped: Redis, job queue, SSR, load balancer, virtualized lists, optimistic UI (it fights stock checks), tracing.
+- Details and order: `docs/PLAN.md`. Conventions: `docs/BACKEND.md`, `docs/FRONTEND.md`.

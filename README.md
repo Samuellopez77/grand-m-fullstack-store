@@ -37,3 +37,10 @@ npm start
 ```
 
 The landing page automatically cycles through the images in `frontend/public/images/landing/`.
+
+## Documentation
+
+- `docs/PLAN.md`: roadmap and order of work
+- `docs/BACKEND.md`, `docs/FRONTEND.md`: conventions for new code
+- `docs/TESTING.md`: running and writing tests
+- `TASKS.md`, `MEMORY.md`: status and decision log
