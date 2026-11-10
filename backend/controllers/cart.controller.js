@@ -27,18 +27,23 @@ async function buildCartResponse(cartId) {
   const rows = await prisma.cartItem.findMany({
     where: { cartId },
     include: {
-      product: { select: { id: true, name: true, price: true, image: true, stock: true } },
+      variant: {
+        include: {
+          product: { select: { id: true, name: true, price: true, image: true } },
+        },
+      },
     },
   });
 
   const items = rows.map((row) => ({
-    productId: row.productId,
-    name: row.product.name,
-    image: row.product.image,
-    unitPrice: row.product.price,
-    stock: row.product.stock,
+    variantId: row.variantId,
+    productId: row.variant.product.id,
+    name: row.variant.product.name,
+    image: row.variant.product.image,
+    unitPrice: row.variant.product.price,
+    stock: row.variant.stock,
     quantity: row.quantity,
-    lineTotal: row.product.price * row.quantity,
+    lineTotal: row.variant.product.price * row.quantity,
   }));
 
   return {
@@ -58,12 +63,15 @@ export async function getCart(req, res, next) {
   }
 }
 
-// POST /api/cart/items  { productId, quantity? }
+// POST /api/cart/items  { variantId, quantity? }
 // Adds to an existing line or creates one. Rejects anything over stock.
 export async function addItem(req, res, next) {
   try {
-    const { productId, quantity = 1 } = req.body ?? {};
-    if (typeof productId !== 'string') throw httpError(400, 'productId is required');
+    const body = req.body ?? {};
+    const variantId = typeof body.variantId === 'string' ? body.variantId : body.productId;
+    const quantity = body.quantity ?? 1;
+
+    if (typeof variantId !== 'string') throw httpError(400, 'variantId is required');
     if (!isValidQuantity(quantity)) {
       throw httpError(400, `quantity must be an integer from 1 to ${MAX_LINE_QUANTITY}`);
     }
@@ -71,25 +79,28 @@ export async function addItem(req, res, next) {
     const cart = await getOrCreateCart(req.user.sub);
 
     await prisma.$transaction(async (tx) => {
-      const product = await tx.product.findUnique({ where: { id: productId } });
-      if (!product) throw httpError(404, 'Product not found');
+      const productVariant = await tx.productVariant.findUnique({
+        where: { id: variantId },
+        include: { product: true },
+      });
+      if (!productVariant) throw httpError(404, 'Product not found');
 
       const existing = await tx.cartItem.findUnique({
-        where: { cartId_productId: { cartId: cart.id, productId } },
+        where: { cartId_variantId: { cartId: cart.id, variantId } },
       });
       const newQuantity = (existing?.quantity ?? 0) + quantity;
 
-      if (newQuantity > product.stock) {
-        throw httpError(409, `Only ${product.stock} available`);
+      if (newQuantity > productVariant.stock) {
+        throw httpError(409, `Only ${productVariant.stock} available`);
       }
       if (newQuantity > MAX_LINE_QUANTITY) {
         throw httpError(400, `You can add at most ${MAX_LINE_QUANTITY} of one item`);
       }
 
       await tx.cartItem.upsert({
-        where: { cartId_productId: { cartId: cart.id, productId } },
+        where: { cartId_variantId: { cartId: cart.id, variantId } },
         update: { quantity: newQuantity },
-        create: { cartId: cart.id, productId, quantity: newQuantity },
+        create: { cartId: cart.id, variantId, quantity: newQuantity },
       });
     });
 
@@ -99,12 +110,13 @@ export async function addItem(req, res, next) {
   }
 }
 
-// PATCH /api/cart/items/:productId  { quantity }
+// PATCH /api/cart/items/:variantId  { quantity }
 // Sets the quantity exactly. Use DELETE to remove a line.
 export async function updateItem(req, res, next) {
   try {
-    const { productId } = req.params;
-    const { quantity } = req.body ?? {};
+    const body = req.body ?? {};
+    const variantId = typeof body.variantId === 'string' ? body.variantId : req.params.variantId;
+    const { quantity } = body;
     if (!isValidQuantity(quantity)) {
       throw httpError(400, `quantity must be an integer from 1 to ${MAX_LINE_QUANTITY}`);
     }
@@ -113,16 +125,16 @@ export async function updateItem(req, res, next) {
 
     await prisma.$transaction(async (tx) => {
       const existing = await tx.cartItem.findUnique({
-        where: { cartId_productId: { cartId: cart.id, productId } },
-        include: { product: { select: { stock: true } } },
+        where: { cartId_variantId: { cartId: cart.id, variantId } },
+        include: { variant: { select: { stock: true } } },
       });
       if (!existing) throw httpError(404, 'Item is not in your cart');
-      if (quantity > existing.product.stock) {
-        throw httpError(409, `Only ${existing.product.stock} available`);
+      if (quantity > existing.variant.stock) {
+        throw httpError(409, `Only ${existing.variant.stock} available`);
       }
 
       await tx.cartItem.update({
-        where: { cartId_productId: { cartId: cart.id, productId } },
+        where: { cartId_variantId: { cartId: cart.id, variantId } },
         data: { quantity },
       });
     });
@@ -133,14 +145,14 @@ export async function updateItem(req, res, next) {
   }
 }
 
-// DELETE /api/cart/items/:productId
+// DELETE /api/cart/items/:variantId
 // Idempotent: removing an item that isn't there still returns the cart.
 export async function removeItem(req, res, next) {
   try {
-    const { productId } = req.params;
+    const { variantId } = req.params;
     const cart = await getOrCreateCart(req.user.sub);
 
-    await prisma.cartItem.deleteMany({ where: { cartId: cart.id, productId } });
+    await prisma.cartItem.deleteMany({ where: { cartId: cart.id, variantId } });
 
     res.json(await buildCartResponse(cart.id));
   } catch (err) {
@@ -148,7 +160,7 @@ export async function removeItem(req, res, next) {
   }
 }
 
-// POST /api/cart/merge  { items: [{ productId, quantity }] }
+// POST /api/cart/merge  { items: [{ variantId, quantity }] }
 // Called once at sign-in with the guest cart from localStorage.
 // Quantities are added to the server cart and capped at stock.
 // Items that can't be added are returned in `skipped`, not as an error.
@@ -165,39 +177,42 @@ export async function mergeCart(req, res, next) {
 
     await prisma.$transaction(async (tx) => {
       for (const entry of items) {
-        const productId = entry?.productId;
+        const variantId = entry?.variantId ?? entry?.productId;
         const quantity = entry?.quantity;
 
-        if (typeof productId !== 'string' || !isValidQuantity(quantity)) {
-          skipped.push({ productId: productId ?? null, reason: 'invalid entry' });
+        if (typeof variantId !== 'string' || !isValidQuantity(quantity)) {
+          skipped.push({ variantId: variantId ?? null, reason: 'invalid entry' });
           continue;
         }
 
-        const product = await tx.product.findUnique({ where: { id: productId } });
-        if (!product) {
-          skipped.push({ productId, reason: 'product not found' });
+        const productVariant = await tx.productVariant.findUnique({
+          where: { id: variantId },
+          include: { product: true },
+        });
+        if (!productVariant) {
+          skipped.push({ variantId, reason: 'product not found' });
           continue;
         }
-        if (product.stock < 1) {
-          skipped.push({ productId, reason: 'out of stock' });
+        if (productVariant.stock < 1) {
+          skipped.push({ variantId, reason: 'out of stock' });
           continue;
         }
 
         const existing = await tx.cartItem.findUnique({
-          where: { cartId_productId: { cartId: cart.id, productId } },
+          where: { cartId_variantId: { cartId: cart.id, variantId } },
         });
         const current = existing?.quantity ?? 0;
-        const target = Math.min(current + quantity, product.stock, MAX_LINE_QUANTITY);
+        const target = Math.min(current + quantity, productVariant.stock, MAX_LINE_QUANTITY);
 
         if (target === current) {
-          skipped.push({ productId, reason: 'already at maximum' });
+          skipped.push({ variantId, reason: 'already at maximum' });
           continue;
         }
 
         await tx.cartItem.upsert({
-          where: { cartId_productId: { cartId: cart.id, productId } },
+          where: { cartId_variantId: { cartId: cart.id, variantId } },
           update: { quantity: target },
-          create: { cartId: cart.id, productId, quantity: target },
+          create: { cartId: cart.id, variantId, quantity: target },
         });
       }
     });

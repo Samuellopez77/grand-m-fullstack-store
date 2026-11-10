@@ -15,8 +15,8 @@ router.use(requireAuth);
 
 router.get('/', getCart);
 router.post('/items', addItem);
-router.patch('/items/:productId', updateItem);
-router.delete('/items/:productId', removeItem);
+router.patch('/items/:variantId', updateItem);
+router.delete('/items/:variantId', removeItem);
 router.post('/merge', mergeCart);
 
 export default router;

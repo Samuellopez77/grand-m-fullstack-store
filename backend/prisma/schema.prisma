@@ -1,5 +1,5 @@
 // GRAND_M — Prisma schema (PostgreSQL)
-// Run: npx prisma migrate dev --name init
+// Prices are whole cedis (1290 = GHS 1,290). Tables use row-level security.
 
 generator client {
   provider = "prisma-client-js"
@@ -27,6 +27,18 @@ enum Department {
   FINANCE
 }
 
+enum Category {
+  SHIRTS
+  HOODIES
+  SNEAKERS
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  UNISEX
+}
+
 enum OrderStatus {
   PLACED
   CONFIRMED
@@ -47,7 +59,6 @@ model User {
   password   String      // hashed with bcrypt — never store plain text
   role       Role        @default(CUSTOMER)
   department Department? // only set when role = STAFF
-  
 
   orders     Order[]
   addresses  Address[]
@@ -59,49 +70,6 @@ model User {
   @@map("users")
 }
 
-model Product {
-  id        String      @id @default(uuid())
-  name      String
-  category  String      // sneakers | hoodies | tops
-  price     Int         // stored in cents/pesewas
-  image     String
-  stock     Int         @default(0)
-
-  orderItems OrderItem[]
-  cartItems  CartItem[]
-
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-
-  @@map("products")
-}
-
-model Order {
-  id        String      @id @default(uuid())
-  userId    String
-  user      User        @relation(fields: [userId], references: [id])
-
-  items     OrderItem[]
-  status    OrderStatus @default(PLACED)
-  total     Int
-
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-
-  @@map("orders")
-}
-
-model OrderItem {
-  id              String  @id @default(uuid())
-  orderId         String
-  order           Order   @relation(fields: [orderId], references: [id])
-  productId       String
-  product         Product @relation(fields: [productId], references: [id])
-  quantity        Int
-  priceAtPurchase Int
-
-  @@map("order_items")
-}
 model Address {
   id            String   @id @default(uuid())
   userId        String
@@ -118,11 +86,48 @@ model Address {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  @@index([userId])
   @@map("addresses")
 }
 
-// One cart per customer. Guest carts live in localStorage on the client
-// and are merged into this cart at sign-in.
+model Product {
+  id          String   @id @default(uuid())
+  slug        String   @unique // generated as brand-name-colour, lowercase
+  name        String
+  brand       String
+  colour      String
+  description String   @default("")
+  category    Category
+  gender      Gender   @default(MALE)
+  price       Int      // whole cedis
+  image       String
+  active      Boolean  @default(true) // false = archived, hidden from the shop
+
+  variants    ProductVariant[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, gender, active])
+  @@index([brand, colour])
+  @@index([price])
+  @@map("products")
+}
+
+model ProductVariant {
+  id         String  @id @default(uuid())
+  productId  String
+  product    Product @relation(fields: [productId], references: [id])
+  size       String  // "M", "XL", "42"
+  stock      Int     @default(0) // CHECK (stock >= 0) is added in the migration SQL
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@unique([productId, size])
+  @@map("product_variants")
+}
+
 model Cart {
   id        String     @id @default(uuid())
   userId    String     @unique
@@ -137,13 +142,51 @@ model Cart {
 }
 
 model CartItem {
-  id        String  @id @default(uuid())
+  id        String         @id @default(uuid())
   cartId    String
-  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
+  cart      Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
   quantity  Int
 
-  @@unique([cartId, productId])
+  @@unique([cartId, variantId])
+  @@index([variantId])
   @@map("cart_items")
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+
+  items     OrderItem[]
+  status    OrderStatus @default(PLACED)
+  total     Int         // whole cedis, fixed at order time
+
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([status, createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id              String         @id @default(uuid())
+  orderId         String
+  order           Order          @relation(fields: [orderId], references: [id])
+  variantId       String
+  variant         ProductVariant @relation(fields: [variantId], references: [id])
+  quantity        Int
+  priceAtPurchase Int            // whole cedis, per unit
+
+  // Snapshot of what was bought, so old orders stay readable if the product changes
+  productName     String
+  brand           String
+  colour          String
+  size            String
+
+  @@index([orderId])
+  @@index([variantId])
+  @@map("order_items")
 }
