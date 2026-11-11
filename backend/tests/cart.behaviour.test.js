@@ -1,4 +1,4 @@
-﻿import { test, describe, beforeEach, after } from 'node:test';
+import { test, describe, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
 import app from '../app.js';
@@ -79,6 +79,32 @@ describe('POST /api/cart/items', () => {
     assert.equal(res.status, 400);
   });
 
+  test('rejects an archived product with 404', async () => {
+    const { token } = await createCustomer();
+    const { product, variant } = await createVariant();
+    await prisma.product.update({ where: { id: product.id }, data: { active: false } });
+
+    const res = await request(app)
+      .post('/api/cart/items')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ variantId: variant.id });
+
+    assert.equal(res.status, 404);
+  });
+
+  test('cart lines include size, brand and colour', async () => {
+    const { token } = await createCustomer();
+    const { variant } = await createVariant({ brand: 'Nike', colour: 'white', size: '42' });
+
+    const res = await request(app)
+      .post('/api/cart/items')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ variantId: variant.id });
+
+    const { size, brand, colour } = res.body.items[0];
+    assert.deepEqual({ size, brand, colour }, { size: '42', brand: 'Nike', colour: 'white' });
+  });
+
   test('rejects an unknown variant with 404', async () => {
     const { token } = await createCustomer();
 
@@ -139,6 +165,27 @@ describe('PATCH /api/cart/items/:variantId', () => {
       .send({ quantity: 6 });
 
     assert.equal(res.status, 409);
+  });
+
+  test('uses the variant in the URL, ignoring the body', async () => {
+    const { token } = await createCustomer();
+    const a = await createVariant({ size: 'M' });
+    const b = await createVariant({ size: 'L' });
+    for (const { variant } of [a, b]) {
+      await request(app)
+        .post('/api/cart/items')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ variantId: variant.id });
+    }
+
+    const res = await request(app)
+      .patch(`/api/cart/items/${a.variant.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ quantity: 5, variantId: b.variant.id });
+
+    const qty = (id) => res.body.items.find((i) => i.variantId === id).quantity;
+    assert.equal(qty(a.variant.id), 5);
+    assert.equal(qty(b.variant.id), 1);
   });
 
   test('returns 404 for a variant that is not in the cart', async () => {
@@ -207,6 +254,20 @@ describe('POST /api/cart/merge', () => {
     assert.equal(res.body.itemCount, 2);
     const reasons = res.body.skipped.map((s) => s.reason).sort();
     assert.deepEqual(reasons, ['invalid entry', 'out of stock', 'product not found']);
+  });
+
+  test('skips an archived product when merging', async () => {
+    const { token } = await createCustomer();
+    const { product, variant } = await createVariant();
+    await prisma.product.update({ where: { id: product.id }, data: { active: false } });
+
+    const res = await request(app)
+      .post('/api/cart/merge')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ items: [{ variantId: variant.id, quantity: 1 }] });
+
+    assert.equal(res.body.itemCount, 0);
+    assert.deepEqual(res.body.skipped.map((x) => x.reason), ['product not found']);
   });
 
   test('caps merged quantities at stock instead of failing', async () => {

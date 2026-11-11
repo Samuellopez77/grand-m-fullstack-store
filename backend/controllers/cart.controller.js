@@ -29,7 +29,7 @@ async function buildCartResponse(cartId) {
     include: {
       variant: {
         include: {
-          product: { select: { id: true, name: true, price: true, image: true } },
+          product: { select: { id: true, name: true, brand: true, colour: true, price: true, image: true } },
         },
       },
     },
@@ -39,6 +39,9 @@ async function buildCartResponse(cartId) {
     variantId: row.variantId,
     productId: row.variant.product.id,
     name: row.variant.product.name,
+    brand: row.variant.product.brand,
+    colour: row.variant.product.colour,
+    size: row.variant.size,
     image: row.variant.product.image,
     unitPrice: row.variant.product.price,
     stock: row.variant.stock,
@@ -67,9 +70,7 @@ export async function getCart(req, res, next) {
 // Adds to an existing line or creates one. Rejects anything over stock.
 export async function addItem(req, res, next) {
   try {
-    const body = req.body ?? {};
-    const variantId = typeof body.variantId === 'string' ? body.variantId : body.productId;
-    const quantity = body.quantity ?? 1;
+    const { variantId, quantity = 1 } = req.body ?? {};
 
     if (typeof variantId !== 'string') throw httpError(400, 'variantId is required');
     if (!isValidQuantity(quantity)) {
@@ -83,7 +84,7 @@ export async function addItem(req, res, next) {
         where: { id: variantId },
         include: { product: true },
       });
-      if (!productVariant) throw httpError(404, 'Product not found');
+      if (!productVariant?.product.active) throw httpError(404, 'Product not found');
 
       const existing = await tx.cartItem.findUnique({
         where: { cartId_variantId: { cartId: cart.id, variantId } },
@@ -114,9 +115,8 @@ export async function addItem(req, res, next) {
 // Sets the quantity exactly. Use DELETE to remove a line.
 export async function updateItem(req, res, next) {
   try {
-    const body = req.body ?? {};
-    const variantId = typeof body.variantId === 'string' ? body.variantId : req.params.variantId;
-    const { quantity } = body;
+    const { variantId } = req.params;
+    const { quantity } = req.body ?? {};
     if (!isValidQuantity(quantity)) {
       throw httpError(400, `quantity must be an integer from 1 to ${MAX_LINE_QUANTITY}`);
     }
@@ -177,7 +177,7 @@ export async function mergeCart(req, res, next) {
 
     await prisma.$transaction(async (tx) => {
       for (const entry of items) {
-        const variantId = entry?.variantId ?? entry?.productId;
+        const variantId = entry?.variantId;
         const quantity = entry?.quantity;
 
         if (typeof variantId !== 'string' || !isValidQuantity(quantity)) {
@@ -189,7 +189,7 @@ export async function mergeCart(req, res, next) {
           where: { id: variantId },
           include: { product: true },
         });
-        if (!productVariant) {
+        if (!productVariant?.product.active) {
           skipped.push({ variantId, reason: 'product not found' });
           continue;
         }
